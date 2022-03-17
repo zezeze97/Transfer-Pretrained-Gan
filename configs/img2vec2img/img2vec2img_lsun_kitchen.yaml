@@ -24,11 +24,11 @@ training:
   use_pretrained_img_feature_extractor: false  
   nworkers: 8
   batch_size: 64
-  epochs: 100
+  epochs: 500
   lr: 0.0001
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   save_per_epoch: 5
   out_dir: output/img2vec2img/lsun_kitchen
   lr_scheduler:
-    milestones_step: 20
+    milestones_step: 100
     gamma: 0.5

@@ -116,7 +116,7 @@ it = -1
 
 # Learning rate scheduler
 milestones_step = config['training']['lr_scheduler']['milestones_step']
-lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=range(1,epochs,milestones_step), gamma=config['training']['lr_scheduler']['gamma'])
+lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=range(milestones_step,epochs,milestones_step), gamma=config['training']['lr_scheduler']['gamma'])
 
 
 if use_pretrained_img_feature_extractor:
