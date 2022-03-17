@@ -1,7 +1,7 @@
 import yaml
 from torch import optim
 from os import path
-from gan_training.models import generator_dict, discriminator_dict
+from gan_training.models import generator_dict, discriminator_dict, im2latent_model_dict
 from gan_training.train import toggle_grad
 
 
@@ -15,7 +15,7 @@ def load_config(path, default_path):
     '''
     # Load configuration from file itself
     with open(path, 'r') as f:
-        cfg_special = yaml.load(f)
+        cfg_special = yaml.load(f, Loader=yaml.FullLoader)
 
     # Check if we should inherit from a config
     inherit_from = cfg_special.get('inherit_from')
@@ -26,7 +26,7 @@ def load_config(path, default_path):
         cfg = load_config(inherit_from, default_path)
     elif default_path is not None:
         with open(default_path, 'r') as f:
-            cfg = yaml.load(f)
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
     else:
         cfg = dict()
 
@@ -75,6 +75,31 @@ def build_models(config):
     )
 
     return generator, discriminator
+
+def build_generator(config):
+    # Get classes
+    Generator = generator_dict[config['generator']['name']]
+    # Build models
+    generator = Generator(
+        z_dim=config['z_dist']['dim'],
+        nlabels=config['data']['nlabels'],
+        size=config['data']['img_size'],
+        **config['generator']['kwargs']
+    )
+    
+    return generator
+
+def build_im2latent(config):
+    # Get classes
+    Im2latent = im2latent_model_dict[config['im2latent']['name']]
+    # Build models
+    im2vec = Im2latent(
+        z_dim=config['z_dist']['dim'],
+        size=config['data']['img_size'],
+        **config['im2latent']['kwargs']
+    )
+
+    return im2vec
 
 
 def build_optimizers(generator, discriminator, config):

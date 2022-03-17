@@ -134,6 +134,13 @@ evaluator = Evaluator(generator_test, zdist, ydist,
 # Train
 tstart = t0 = time.time()
 
+# Load pretrained ckpt
+finetune_mode = config['training']['finetune']
+if finetune_mode:
+    pretrained_ckpt = config['training']['pretrain_ckpt_file']
+    load_dict = checkpoint_io.load(pretrained_ckpt)
+    it = epoch_idx = -1
+
 # Load checkpoint if it exists
 try:
     load_dict = checkpoint_io.load(model_file)
@@ -169,8 +176,8 @@ while True:
 
     for x_real, y in train_loader:
         it += 1
-        g_scheduler.step()
-        d_scheduler.step()
+        
+        
 
         d_lr = d_optimizer.param_groups[0]['lr']
         g_lr = g_optimizer.param_groups[0]['lr']
@@ -183,6 +190,7 @@ while True:
         # Discriminator updates
         z = zdist.sample((batch_size,))
         dloss, reg = trainer.discriminator_trainstep(x_real, y, z)
+        d_scheduler.step()
         logger.add('losses', 'discriminator', dloss, it=it)
         logger.add('losses', 'regularizer', reg, it=it)
 
@@ -195,7 +203,7 @@ while True:
             if config['training']['take_model_average']:
                 update_average(generator_test, generator,
                                beta=config['training']['model_average_beta'])
-
+        g_scheduler.step()
         # Print stats
         g_loss_last = logger.get_last('losses', 'generator')
         d_loss_last = logger.get_last('losses', 'discriminator')

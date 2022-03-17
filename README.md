@@ -1,72 +1,35 @@
-# GAN stability
-This repository contains the experiments in the supplementary material for the paper [Which Training Methods for GANs do actually Converge?](https://avg.is.tuebingen.mpg.de/publications/meschedericml2018).
+# 预训练模型
+- [lsun_bedroom](https://s3.eu-central-1.amazonaws.com/avg-projects/gan_stability/models/lsun_bedroom-df4e7dd2.pt): 256*256
+- [imagenet](https://s3.eu-central-1.amazonaws.com/avg-projects/gan_stability/models/imagenet-8c505f47.pt): 128*128
+  
+    对应的预训练模型config在[configs/pretrained](configs/pretrained)中
 
-To cite this work, please use
-```
-@INPROCEEDINGS{Mescheder2018ICML,
-  author = {Lars Mescheder and Sebastian Nowozin and Andreas Geiger},
-  title = {Which Training Methods for GANs do actually Converge?},
-  booktitle = {International Conference on Machine Learning (ICML)},
-  year = {2018}
-}
-```
-You can find further details on [our project page](https://avg.is.tuebingen.mpg.de/research_projects/convergence-and-stability-of-gan-training).
+# 数据集准备
+    ```
+    data
+    └── LSUN
+        ├── bedroom_train_lmdb
+        ├── bedroom_val_lmdb
+        ├── kitchen_minitrain_png
+        ├── kitchen_train_lmdb
+        ├── kitchen_val_lmdb
+        └── kitchen_val_png
+    ```
 
-# Usage
-First download your data and put it into the `./data` folder.
+# Finetuning
+将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中
+## Bedroom -> Kitchen
+    ```
+    # 标准正态Noise
+    python train.py configs/finetune/finetune_lsun_kitchen.yaml
+    ```
 
-To train a new model, first create a config script similar to the ones provided in the `./configs` folder.  You can then train you model using
-```
-python train.py PATH_TO_CONFIG
-```
-
-To compute the inception score for your model and generate samples, use
-```
-python test.py PATH_TO_CONFIG
-```
-
-Finally, you can create nice latent space interpolations using
-```
-python interpolate.py PATH_TO_CONFIG
-```
-or
-```
-python interpolate_class.py PATH_TO_CONFIG
-```
-
-# Pretrained models
-We also provide several pretrained models.
-
-You can use the models for sampling by entering
-```
-python test.py PATH_TO_CONFIG
-```
-where `PATH_TO_CONFIG` is one of the config files
-```
-configs/pretrained/celebA_pretrained.yaml
-configs/pretrained/celebAHQ_pretrained.yaml
-configs/pretrained/imagenet_pretrained.yaml
-configs/pretrained/lsun_bedroom_pretrained.yaml
-configs/pretrained/lsun_bridge_pretrained.yaml
-configs/pretrained/lsun_church_pretrained.yaml
-configs/pretrained/lsun_tower_pretrained.yaml
-```
-Our script will automatically download the model checkpoints and run the generation.
-You can find the outputs in the `output/pretrained` folders.
-Similarly, you can use the scripts `interpolate.py` and `interpolate_class.py` for generating interpolations for the pretrained models.
-
-Please note that the config files  `*_pretrained.yaml` are only for generation, not for training new models: when these configs are used for training, the model will be trained from scratch, but during inference our code will still use the pretrained model.
-
-# Notes
-* Batch normalization is currently *not* supported when using an exponential running average, as the running average is only computed over the parameters of the models and not the other buffers of the model.
-
-# Results
-## celebA-HQ
-![celebA-HQ](results/celebA-HQ.jpg)
-
-## Imagenet
-![Imagenet 0](results/imagenet_00.jpg)
-![Imagenet 1](results/imagenet_01.jpg)
-![Imagenet 2](results/imagenet_02.jpg)
-![Imagenet 3](results/imagenet_03.jpg)
-![Imagenet 4](results/imagenet_04.jpg)
+# 隐向量寻找
+    将所有隐向量寻找相关模型config放在[configs/img2vec2img](configs/img2vec2img)中
+## 预训练Bedroom Generator中找Kitchen
+    ```
+    # 拟合kitchen 5w
+    python img2vec2img.py configs/img2vec2img/img2vec2img_lsun_kitchen.yaml
+    # 一个batch,一个batch拟合
+    python img2vec2img_batch_mode.py configs/img2vec2img/img2vec2img_lsun_kitche_batch_mode.yaml
+    ```

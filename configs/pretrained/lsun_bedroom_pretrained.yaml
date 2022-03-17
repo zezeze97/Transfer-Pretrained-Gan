@@ -25,6 +25,7 @@ test:
   batch_size: 32 
   sample_size: 64 
   sample_nrow: 8
+  compute_inception: true
 interpolations:
   nzs: 10
   nsubsteps: 75

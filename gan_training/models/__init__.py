@@ -15,3 +15,7 @@ discriminator_dict = {
     'resnet3': resnet3.Discriminator,
     'resnet4': resnet4.Discriminator,
 }
+
+im2latent_model_dict = {
+    'resnet3': resnet3.Im2Latent
+}

@@ -3,3 +3,6 @@ data
 *_lmdb
 __pycache__
 *.pyc
+pretrained_ckpt
+_cache_dataLSUNbedroomtrainlmdb
+_cache_dataLSUNkitchentrainlmdb

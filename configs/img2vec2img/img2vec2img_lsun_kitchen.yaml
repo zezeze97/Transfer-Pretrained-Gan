@@ -1,0 +1,34 @@
+data:
+  type: image
+  train_dir: data/LSUN/kitchen_minitrain_png
+  test_dir: data/LSUN/kitchen_val_png
+  lsun_categories_train: [kitchen_train]
+  lsun_categories_test: [kitchen_val]
+  img_size: 256
+  nlabels: 1
+generator:
+  name: resnet3
+  kwargs:
+    nfilter: 64
+    embed_size: 1
+im2latent:
+  name: resnet3
+  kwargs:
+    nfilter: 64
+    embed_size: 1
+z_dist:
+  type: gauss
+  dim: 256
+training:
+  load_from: output/img2vec2img/lsun_kitchen/chkpts_old/epoch_10_im2vec.pth
+  use_pretrained_img_feature_extractor: false  
+  nworkers: 8
+  batch_size: 64
+  epochs: 100
+  lr: 0.0001
+  pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
+  save_per_epoch: 5
+  out_dir: output/img2vec2img/lsun_kitchen
+  lr_scheduler:
+    milestones_step: 20
+    gamma: 0.5
