@@ -25,6 +25,7 @@ training:
   out_dir: output/finetune/lsun_kitchen
   inception_every: 100
 test:
+  model_file: ''
   batch_size: 32 
   sample_size: 64 
   sample_nrow: 8

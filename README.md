@@ -17,7 +17,7 @@
     ```
 
 # Finetuning
-将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中
+ 将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中
 ## Bedroom -> Kitchen
     ```
     # 标准正态Noise
@@ -32,4 +32,9 @@
     python img2vec2img.py configs/img2vec2img/img2vec2img_lsun_kitchen.yaml
     # 一个batch,一个batch拟合
     python img2vec2img_batch_mode.py configs/img2vec2img/img2vec2img_lsun_kitche_batch_mode.yaml
+    ```
+
+# 计算fid
+    ```
+    python test.py PATH_TO_CONFIG
     ```
