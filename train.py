@@ -15,6 +15,7 @@ from gan_training.eval import Evaluator
 from gan_training.config import (
     load_config, build_models, build_optimizers, build_lr_scheduler,
 )
+import numpy as np
 
 # Arguments
 parser = argparse.ArgumentParser(
@@ -36,7 +37,6 @@ inception_every = config['training']['inception_every']
 save_every = config['training']['save_every']
 backup_every = config['training']['backup_every']
 sample_nlabels = config['training']['sample_nlabels']
-
 out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 
@@ -108,10 +108,16 @@ logger = Logger(
     monitoring_dir=path.join(out_dir, 'monitoring')
 )
 
+# load mean and cov of latentvecs if neccessary
+if config['z_dist']['type'] == 'multivariate_normal':
+    mean_path = config['z_dist']['mean_path']
+    cov_path = config['z_dist']['cov_path']
+    mean = torch.FloatTensor(np.load(mean_path))
+    cov = torch.FloatTensor(np.load(cov_path))
+
 # Distributions
 ydist = get_ydist(nlabels, device=device)
-zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'],
-                  device=device)
+zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
 
 # Save for tests
 ntest = batch_size

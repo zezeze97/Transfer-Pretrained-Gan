@@ -38,3 +38,6 @@
     ```
     python test.py PATH_TO_CONFIG
     ```
+
+to do:
+在train.py中加入shift noise, 直接改zdist

@@ -2,7 +2,7 @@ import torch
 from torch import distributions
 
 
-def get_zdist(dist_name, dim, device=None):
+def get_zdist(dist_name, dim, mean, cov, device=None):
     # Get distribution
     if dist_name == 'uniform':
         low = -torch.ones(dim, device=device)
@@ -12,6 +12,11 @@ def get_zdist(dist_name, dim, device=None):
         mu = torch.zeros(dim, device=device)
         scale = torch.ones(dim, device=device)
         zdist = distributions.Normal(mu, scale)
+    elif dist_name == 'multivariate_normal' :
+        mean.to(device)
+        cov.to(device)
+        zdist = distributions.MultivariateNormal(loc=mean, covariance_matrix=cov)
+
     else:
         raise NotImplementedError
 
