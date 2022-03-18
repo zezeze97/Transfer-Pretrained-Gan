@@ -79,8 +79,11 @@ img2vec = build_im2latent(config)
 print(generator)
 print(img2vec)
 if use_pretrained_img_feature_extractor:
-    image_feature_extractor = models.vgg16_bn(pretrained=True)
-    return_nodes = {'flatten': 'flatten'}
+    image_feature_extractor = models.resnet18(pretrained=True)
+    return_nodes = {'layer4.1.relu_1': 'layer4',
+                'layer3.1.relu_1': 'layer3',
+                'layer2.1.relu_1': 'layer2',
+                'layer1.1.relu_1': 'layer1' }
     image_feature_extractor = create_feature_extractor(image_feature_extractor, return_nodes=return_nodes)
 
 # Put models on gpu if needed
@@ -148,7 +151,9 @@ for batch_index, (x_real, y) in enumerate(train_loader):
             with torch.no_grad():
                 senmantic_real = image_feature_extractor(x_real)['flatten']
             senmantic_gen = image_feature_extractor(x_generate)['flatten']
-            loss = criterion(senmantic_gen, senmantic_real)
+            loss = 0
+            for k in return_nodes.keys():
+                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]])
         else:
             loss = criterion(x_generate, x_real)
         # img2vec model updates
