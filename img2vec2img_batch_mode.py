@@ -149,11 +149,11 @@ for batch_index, (x_real, y) in enumerate(train_loader):
         if use_pretrained_img_feature_extractor:
             # compute senmantic output of x_real and x_generate
             with torch.no_grad():
-                senmantic_real = image_feature_extractor(x_real)['flatten']
-            senmantic_gen = image_feature_extractor(x_generate)['flatten']
+                senmantic_real = image_feature_extractor(x_real)
+            senmantic_gen = image_feature_extractor(x_generate)
             loss = 0
             for k in return_nodes.keys():
-                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]])
+                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]].detach())
         else:
             loss = criterion(x_generate, x_real)
         # img2vec model updates

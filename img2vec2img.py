@@ -162,7 +162,7 @@ for epoch in range(epochs):
             senmantic_gen = image_feature_extractor(x_generate)
             loss = 0
             for k in return_nodes.keys():
-                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]])
+                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]].detach())
         else:
             loss = criterion(x_generate, x_real)
 
