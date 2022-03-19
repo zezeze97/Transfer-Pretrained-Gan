@@ -22,16 +22,20 @@
     ```
     # 标准正态Noise
     python train.py configs/finetune/finetune_lsun_kitchen.yaml
+    # shift noise finetuning
+    python train.py configs/finetune/finetune_lsun_kitchen_shift.yaml
     ```
 
 # 隐向量寻找
-    将所有隐向量寻找相关模型config放在[configs/img2vec2img](configs/img2vec2img)中
+  将所有隐向量寻找相关模型config放在[configs/img2vec2img](configs/img2vec2img)中
 ## 预训练Bedroom Generator中找Kitchen
     ```
     # 拟合kitchen 5w
     python img2vec2img.py configs/img2vec2img/img2vec2img_lsun_kitchen.yaml
     # 一个batch,一个batch拟合
     python img2vec2img_batch_mode.py configs/img2vec2img/img2vec2img_lsun_kitche_batch_mode.yaml
+    # 计算kitchen5w数据中的mean, cov
+    python compute_mean_cov.py --config configs/img2vec2img/img2vec2img_lsun_kitchen.yaml --img2vec_model_ckpt output/img2vec2img/lsun_kitchen/chkpts/epoch_500_im2vec.pth --output_dir output/img2vec2img/lsun_kitchen
     ```
 
 # 计算fid

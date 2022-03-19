@@ -117,7 +117,11 @@ if config['z_dist']['type'] == 'multivariate_normal':
 
 # Distributions
 ydist = get_ydist(nlabels, device=device)
-zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
+if config['z_dist']['type'] == 'multivariate_normal':
+    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
+else:
+    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean=None, cov=None, device=device)
+print('noise type: ', config['z_dist']['type'])
 
 # Save for tests
 ntest = batch_size
