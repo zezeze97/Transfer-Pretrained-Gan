@@ -21,7 +21,7 @@ z_dist:
   mean_path: null
   cov_path: null
 training:
-  batch_size: 16
+  batch_size: 64
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   finetune: true
   out_dir: output/finetune/lsun_kitchen_gauss
