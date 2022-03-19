@@ -16,6 +16,7 @@ z_dist:
   type: gauss
   dim: 256
 training:
+  finetune: false
   out_dir: output/default
   gan_type: standard
   reg_type: real
