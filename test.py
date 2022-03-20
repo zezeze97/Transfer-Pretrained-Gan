@@ -12,6 +12,7 @@ from gan_training.eval import Evaluator
 from gan_training.config import (
     load_config, build_models
 )
+import numpy as np
 
 # Arguments
 parser = argparse.ArgumentParser(
@@ -77,10 +78,20 @@ if config['test']['use_model_average']:
 else:
     generator_test = generator
 
+# load mean and cov of latentvecs if neccessary
+if config['z_dist']['type'] == 'multivariate_normal':
+    mean_path = config['z_dist']['mean_path']
+    cov_path = config['z_dist']['cov_path']
+    mean = torch.FloatTensor(np.load(mean_path))
+    cov = torch.FloatTensor(np.load(cov_path))
+
 # Distributions
 ydist = get_ydist(nlabels, device=device)
-zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'],
-                  device=device)
+if config['z_dist']['type'] == 'multivariate_normal':
+    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
+else:
+    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean=None, cov=None, device=device)
+print('noise type: ', config['z_dist']['type'])
 
 # Evaluator
 evaluator = Evaluator(generator_test, zdist, ydist,
