@@ -6,6 +6,7 @@ from torch import nn
 from gan_training.logger import Logger
 from gan_training.inputs import get_dataset
 from gan_training.config import load_config, build_generator, build_im2latent
+from gan_training.kl_loss import kl_divergence
 from collections import OrderedDict
 import torchvision
 from tensorboardX import SummaryWriter
@@ -44,7 +45,8 @@ lr = config['training']['lr']
 out_dir = config['training']['out_dir']
 save_per_epoch = config['training']['save_per_epoch']
 checkpoint_dir = path.join(out_dir, 'chkpts')
-
+use_regularization = config['training']['use_regularization']
+reularization_lambda = config['training']['regularization']['lambda']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -151,29 +153,52 @@ for epoch in range(epochs):
 
         # Img -> Latent
         z = img2vec(x_real)
+
+        # compute mean and cov of cunrrent batch latentvecs if needed
+        if use_regularization:
+            z_mean = torch.mean(z, dim=0)
+            z_cov = torch.cov(z.T)
         
         # Latent -> Img
         x_generate = generator(z, y)
 
+        # compute loss
         if use_pretrained_img_feature_extractor:
             # compute senmantic output of x_real and x_generate
             with torch.no_grad():
                 senmantic_real = image_feature_extractor(x_real)
             senmantic_gen = image_feature_extractor(x_generate)
-            loss = 0
+            image_loss = 0
             for k in return_nodes.keys():
-                loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]].detach())
+                image_loss += criterion(senmantic_gen[return_nodes[k]], senmantic_real[return_nodes[k]].detach())
         else:
-            loss = criterion(x_generate, x_real)
+            image_loss = criterion(x_generate, x_real)
+
+        if use_regularization:
+            if config['training']['regularization']['type'] == 'kl':
+                regularization_loss = kl_divergence(z_mean, z_cov, config['z_dist']['dim'], eps = 0.0000000001)
+            if config['training']['regularization']['type'] == 'l2':
+                regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov)
+            total_loss = image_loss + reularization_lambda * regularization_loss
+        else:
+            total_loss = image_loss
 
         # img2vec model updates
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
-        writer.add_scalar('losses', loss.cpu().data.numpy(), it)
-
+        
         # Print stats
-        print('[epoch %0d, it %4d] loss = %.4f'% (epoch, it, loss.cpu().data.numpy()))
+        if use_regularization:
+            writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+            writer.add_scalar('image loss', image_loss.cpu().data.numpy(), it)
+            writer.add_scalar('regularization loss', regularization_loss.cpu().data.numpy(), it)
+            print('[epoch %0d, it %4d] image loss = %.4f regularization loss =  %.4f'% (epoch, it, image_loss.cpu().data.numpy(), regularization_loss.cpu().data.numpy()))        
+        else:
+            writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+            writer.add_scalar('image loss', image_loss.cpu().data.numpy(), it)
+            print('[epoch %0d, it %4d] image loss = %.4f'% (epoch, it, image_loss.cpu().data.numpy()))
+
     lr_scheduler.step()
     # Save checkpoint if necessary
     if (epoch+1) % save_per_epoch == 0 :

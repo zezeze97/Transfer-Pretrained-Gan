@@ -21,12 +21,16 @@ z_dist:
   dim: 256
 training:
   use_pretrained_img_feature_extractor: false
+  use_regularization: true
+  regularization:
+    type: 'l2'
+    lambda : 0.1
   nworkers: 8
   batch_size: 64
   iter_per_batch: 10000
   lr: 0.0001
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
-  out_dir: output/img2vec2img/lsun_kitchen_batch_mode
+  out_dir: output/img2vec2img/lsun_kitchen_batch_mode_regularization
   lr_scheduler: 
     step_size: 8000
     gamma: 0.1
