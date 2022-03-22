@@ -23,8 +23,8 @@ training:
   use_pretrained_img_feature_extractor: false
   use_regularization: true
   regularization:
-    type: 'l2'
-    lambda : 0.1
+    type: l2
+    lambda : 0.01
   nworkers: 8
   batch_size: 64
   iter_per_batch: 10000

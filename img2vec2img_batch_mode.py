@@ -170,7 +170,8 @@ for batch_index, (x_real, y) in enumerate(train_loader):
             if config['training']['regularization']['type'] == 'kl':
                 regularization_loss = kl_divergence(z_mean, z_cov, config['z_dist']['dim'], eps = 0.0000000001)
             if config['training']['regularization']['type'] == 'l2':
-                regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov)
+                standard_cov = torch.eye(config['z_dist']['dim']).to(device)
+                regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov - standard_cov)
             total_loss = image_loss + reularization_lambda * regularization_loss
         else:
             total_loss = image_loss
