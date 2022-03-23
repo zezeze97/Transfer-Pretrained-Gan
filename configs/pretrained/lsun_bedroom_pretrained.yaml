@@ -21,11 +21,11 @@ z_dist:
 training:
   out_dir: output/pretrained/lsun_bedroom
 test:
-  model_file: https://s3.eu-central-1.amazonaws.com/avg-projects/gan_stability/models/lsun_bedroom-df4e7dd2.pt
+  model_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   batch_size: 32 
   sample_size: 64 
   sample_nrow: 8
-  compute_inception: true
+  compute_inception: false
 interpolations:
   nzs: 10
   nsubsteps: 75
