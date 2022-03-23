@@ -59,7 +59,8 @@ train_dataset, nlabels = get_dataset(
     name=config['data']['type'],
     data_dir=config['data']['train_dir'],
     size=config['data']['img_size'],
-    lsun_categories=config['data']['lsun_categories_train']
+    lsun_categories=config['data']['lsun_categories_train'],
+    simple_transform=config['data']['simple_transform']
 )
 train_loader = torch.utils.data.DataLoader(
         train_dataset,

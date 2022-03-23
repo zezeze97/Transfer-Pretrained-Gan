@@ -4,15 +4,22 @@ import torchvision.datasets as datasets
 import numpy as np
 
 
-def get_dataset(name, data_dir, size=64, lsun_categories=None):
-    transform = transforms.Compose([
-        transforms.Resize(size),
-        transforms.CenterCrop(size),
-        transforms.RandomHorizontalFlip(),
+def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform = False):
+    if simple_transform:
+        transform = transforms.Compose([
+        transforms.Resize((size,size)),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Lambda(lambda x: x + 1./128 * torch.rand(x.size())),
-    ])
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+    else:
+        transform = transforms.Compose([
+            transforms.Resize(size),
+            transforms.CenterCrop(size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.Lambda(lambda x: x + 1./128 * torch.rand(x.size())),
+        ])
 
     if name == 'image':
         dataset = datasets.ImageFolder(data_dir, transform)

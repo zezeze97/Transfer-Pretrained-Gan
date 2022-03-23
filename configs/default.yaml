@@ -2,6 +2,7 @@ data:
   type: lsun
   train_dir: data/LSUN
   test_dir: data/LSUN
+  simple_transform: false
   lsun_categories_train: [bedroom_train]
   lsun_categories_test: [bedroom_test]
   img_size: 256

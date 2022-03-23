@@ -2,6 +2,7 @@ data:
   type: image
   train_dir: data/LSUN/kitchen_minitrain_png
   test_dir: data/LSUN/kitchen_val_png
+  simple_transform: true
   lsun_categories_train: [kitchen_train]
   lsun_categories_test: [kitchen_val]
   img_size: 256
