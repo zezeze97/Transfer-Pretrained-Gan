@@ -119,6 +119,9 @@ for index, (x_real, y) in enumerate(train_loader):
     latent_vecs_embedding_layer.train()
     generator.eval()
     print('Start Batch %d...' % (index+1))
+    # get current batch latentvecs
+    latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
+    latent_list = torch.tensor(latent_list).to(device)
     for iteration in range(iter_per_batch):
         it += 1
         current_lr = optimizer.param_groups[0]['lr']
@@ -126,9 +129,7 @@ for index, (x_real, y) in enumerate(train_loader):
         x_real, y = x_real.to(device), y.to(device)
         y.clamp_(None, nlabels-1)
 
-        # get current batch latentvecs
-        latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
-        latent_list = torch.tensor(latent_list).to(device)
+        # get latent vec z
         z = latent_vecs_embedding_layer(latent_list)
 
         # compute current batch mean and cov if needed
@@ -174,8 +175,6 @@ for index, (x_real, y) in enumerate(train_loader):
     latent_vecs_embedding_layer.eval()
     with torch.no_grad():
         # get current batch latentvecs and generated fake image
-        latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
-        latent_list = torch.tensor(latent_list).to(device)
         z = latent_vecs_embedding_layer(latent_list)
         gen_images = generator(z, y)
     latentvecs = z.detach().cpu().numpy()
