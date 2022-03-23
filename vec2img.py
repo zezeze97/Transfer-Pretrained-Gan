@@ -159,7 +159,7 @@ for epoch in range(epochs):
     # Save checkpoint if necessary
     if (epoch+1) % save_per_epoch == 0 :
         print('Saving checkpoint...')
-        torch.save(latent_vecs_embedding_layer.state_dict(), out_dir + '/chkpts/epoch_'+ str(epoch+1) + '_latent_vecs_embedding_layer.pth')
+        torch.save(latent_vecs_embedding_layer.state_dict(), out_dir + '/latent_vecs_embedding_layer.pth')
         #===visualize current result====
         # read a batch of data
         x_real, y = next(iter(train_loader))
