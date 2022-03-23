@@ -46,7 +46,7 @@ out_dir = config['training']['out_dir']
 save_per_epoch = config['training']['save_per_epoch']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 use_regularization = config['training']['use_regularization']
-reularization_lambda = config['training']['regularization']['lambda']
+regularization_lambda = config['training']['regularization']['lambda']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -181,7 +181,7 @@ for epoch in range(epochs):
             if config['training']['regularization']['type'] == 'l2':
                 standard_cov = torch.eye(config['z_dist']['dim']).to(device)
                 regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov - standard_cov)
-            total_loss = image_loss + reularization_lambda * regularization_loss
+            total_loss = image_loss + regularization_lambda * regularization_loss
         else:
             total_loss = image_loss
 

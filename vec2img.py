@@ -6,6 +6,7 @@ from torch import nn
 from gan_training.logger import Logger
 from gan_training.inputs import get_dataset
 from gan_training.config import load_config, build_generator, build_im2latent
+from gan_training.kl_loss import kl_divergence
 from collections import OrderedDict
 import torchvision
 from tensorboardX import SummaryWriter
@@ -13,6 +14,7 @@ import torchvision.models as models
 from torchvision.models.feature_extraction import get_graph_node_names
 from torchvision.models.feature_extraction import create_feature_extractor
 from itertools import chain
+import numpy as np
 
 
 def remove_module_str_in_state_dict(state_dict):
@@ -43,12 +45,16 @@ lr = config['training']['lr']
 out_dir = config['training']['out_dir']
 save_per_epoch = config['training']['save_per_epoch']
 checkpoint_dir = path.join(out_dir, 'chkpts')
-
+latentvecs_dir = path.join(out_dir,'latentvecs')
+use_regularization = config['training']['use_regularization']
+regularization_lambda = config['training']['regularization']['lambda']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
 if not path.exists(checkpoint_dir):
     os.makedirs(checkpoint_dir)
+if not path.exists(latentvecs_dir):
+    os.makedirs(latentvecs_dir)
 
 # use gpu
 device = torch.device("cuda:0" if is_cuda else "cpu")
@@ -140,21 +146,43 @@ for epoch in range(epochs):
         latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
         latent_list = torch.tensor(latent_list).to(device)
         z = latent_vecs_embedding_layer(latent_list)
+
+        # compute current batch mean and cov if needed
+        if use_regularization:
+            z_mean = torch.mean(z, dim=0)
+            z_cov = torch.cov(z.T)
         
         # Latent -> Img
         x_generate = generator(z, y)
 
         # compute loss
-        loss = criterion(x_generate, x_real)
+        image_loss = criterion(x_generate, x_real)
+        if use_regularization:
+            if config['training']['regularization']['type'] == 'kl':
+                regularization_loss = kl_divergence(z_mean, z_cov, config['z_dist']['dim'], eps = 0.0000000001)
+            if config['training']['regularization']['type'] == 'l2':
+                standard_cov = torch.eye(config['z_dist']['dim']).to(device)
+                regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov - standard_cov)
+            total_loss = image_loss + regularization_lambda * regularization_loss
+        else:
+            total_loss = image_loss
 
         # img2vec model updates
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
-        writer.add_scalar('losses', loss.cpu().data.numpy(), it)
+        writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
 
         # Print stats
-        print('[epoch %0d, it %4d] loss = %.4f'% (epoch, it, loss.cpu().data.numpy()))
+        if use_regularization:
+            writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+            writer.add_scalar('image loss', image_loss.cpu().data.numpy(), it)
+            writer.add_scalar('regularization loss', regularization_loss.cpu().data.numpy(), it)
+            print('[epoch %0d, it %4d] total loss = %.4f image loss = %.4f regularization loss = %.4f'% (epoch, it, total_loss.cpu().data.numpy(), image_loss.cpu().data.numpy(), regularization_loss.cpu().data.numpy()))
+        else:
+            writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+            writer.add_scalar('image loss', image_loss.cpu().data.numpy(), it)
+            print('[epoch %0d, it %4d] total loss = %.4f image loss = %.4f'% (epoch, it, total_loss.cpu().data.numpy(), image_loss.cpu().data.numpy()))
     lr_scheduler.step()
     # Save checkpoint if necessary
     if (epoch+1) % save_per_epoch == 0 :
@@ -183,7 +211,16 @@ for epoch in range(epochs):
         writer.add_image('gen_images', gen_images, global_step = epoch+1)
         latent_vecs_embedding_layer.train()
 
-
+# save latentvecs
+latent_vecs_embedding_layer.eval()
+for index, (x_real, y) in enumerate(train_loader):
+    with torch.no_grad():
+         # get current batch latentvecs
+        latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
+        latent_list = torch.tensor(latent_list).to(device)
+        z = latent_vecs_embedding_layer(latent_list)
+    latentvecs = z.detach().cpu().numpy()
+    np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 
 
         

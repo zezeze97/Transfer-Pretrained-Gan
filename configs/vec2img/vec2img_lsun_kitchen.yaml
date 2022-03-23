@@ -16,14 +16,18 @@ z_dist:
   type: gauss
   dim: 256
 training:
-  load_from: 'output/vec2img/lsun_kitchen_val/chkpts/old_ckpt.pth'
+  load_from: 'output/vec2img/lsun_kitchen_val/chkpts/latent_vecs_embedding_layer.pth'
+  use_regularization: false
+  regularization:
+    type: l2
+    lambda : 0.01
   nworkers: 8
   batch_size: 64
-  epochs: 10000
-  lr: 0.01
+  epochs: 500
+  lr: 0.1
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   save_per_epoch: 100
   out_dir: output/vec2img/lsun_kitchen_val
   lr_scheduler:
-    milestones_step: 8000
+    milestones_step: 2500
     gamma: 0.1

@@ -44,7 +44,7 @@ lr = config['training']['lr']
 out_dir = config['training']['out_dir']
 use_pretrained_img_feature_extractor = config['training']['use_pretrained_img_feature_extractor']
 use_regularization = config['training']['use_regularization']
-reularization_lambda = config['training']['regularization']['lambda']
+regularization_lambda = config['training']['regularization']['lambda']
 
 # Create missing directories
 if not path.exists(out_dir):
@@ -173,7 +173,7 @@ for batch_index, (x_real, y) in enumerate(train_loader):
             if config['training']['regularization']['type'] == 'l2':
                 standard_cov = torch.eye(config['z_dist']['dim']).to(device)
                 regularization_loss = torch.linalg.norm(z_mean) + torch.linalg.norm(z_cov - standard_cov)
-            total_loss = image_loss + reularization_lambda * regularization_loss
+            total_loss = image_loss + regularization_lambda * regularization_loss
         else:
             total_loss = image_loss
         
