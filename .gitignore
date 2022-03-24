@@ -6,3 +6,4 @@ __pycache__
 pretrained_ckpt
 _cache_dataLSUNbedroomtrainlmdb
 _cache_dataLSUNkitchentrainlmdb
+.vscode

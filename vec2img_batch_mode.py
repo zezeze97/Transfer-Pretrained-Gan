@@ -46,6 +46,7 @@ checkpoint_dir = path.join(out_dir, 'chkpts')
 latentvecs_dir = path.join(out_dir,'latentvecs')
 use_regularization = config['training']['use_regularization']
 regularization_lambda = config['training']['regularization']['lambda']
+omit_embedding_layer = config['training']['omit_embedding_layer']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -97,27 +98,50 @@ writer = SummaryWriter(logdir=out_dir+'/monitoring')
 pretrained_ckpt = config['training']['pretrain_ckpt_file']
 loaded_dict = torch.load(pretrained_ckpt)
 print('Loading pretrained generator...')
-generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
+if omit_embedding_layer:
+    print('omit embedding_layer of generator!')
+    pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
+    generator_state_dict = generator.state_dict()
+    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    generator_state_dict.update(new_dict)
+    generator.load_state_dict(generator_state_dict)
+else:
+    generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
 print('Pretrained generator loaded!')
 it = -1
 
 
 # fix param in generator
-for params in generator.parameters():
-    params.requires_grad = False
+if omit_embedding_layer:
+    for k,v in generator.named_parameters():
+        if k =='embedding.weight':
+            v.requires_grad = True
+        else:
+            v.requires_grad = False
+        
+else:
+    for params in generator.parameters():
+        params.requires_grad = False
 
 
 # Training loop
 print('Start training...')
 for index, (x_real, y) in enumerate(train_loader):
-    # optimize and loss
-    optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
+    # optimizer and loss
+    if omit_embedding_layer:
+        optimizer = torch.optim.Adam(chain(latent_vecs_embedding_layer.parameters(),filter(lambda p: p.requires_grad, generator.parameters())), lr=lr, betas=(0.9, 0.999))
+    else:
+        optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
     criterion = nn.MSELoss()
     # Learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config['training']['lr_scheduler']['step_size'], gamma=config['training']['lr_scheduler']['gamma'])
     # set mode
     latent_vecs_embedding_layer.train()
-    generator.eval()
+    if omit_embedding_layer:
+        generator.eval()
+        generator.embedding.train()
+    else:
+        generator.eval()
     print('Start Batch %d...' % (index+1))
     # get current batch latentvecs
     latent_list = list(range(index*batch_size, min((index+1)*batch_size, len(train_dataset))))
@@ -173,6 +197,8 @@ for index, (x_real, y) in enumerate(train_loader):
 
     # Save current batch latentvecs and visualize
     latent_vecs_embedding_layer.eval()
+    if omit_embedding_layer:
+        generator.eval()
     with torch.no_grad():
         # get current batch latentvecs and generated fake image
         z = latent_vecs_embedding_layer(latent_list)
@@ -184,7 +210,9 @@ for index, (x_real, y) in enumerate(train_loader):
     writer.add_image('gt_images', gt_images, global_step = index+1)
     gen_images = torchvision.utils.make_grid(gen_images*0.5+0.5, nrow=8, padding=2)
     writer.add_image('gen_images', gen_images, global_step = index+1)
-
+    # Save current generator if embedding layer is trainable
+    if omit_embedding_layer:
+        torch.save(generator.state_dict(), out_dir + '/chkpts/generator.pth')
 
         
 

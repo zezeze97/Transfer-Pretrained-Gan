@@ -26,6 +26,7 @@ training:
   epochs: 10000
   lr: 0.1
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
+  omit_embedding_layer: false
   save_per_epoch: 100
   out_dir: output/vec2img/lsun_kitchen_mini_train
   lr_scheduler:
