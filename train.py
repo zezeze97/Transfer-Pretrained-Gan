@@ -16,6 +16,7 @@ from gan_training.config import (
     load_config, build_models, build_optimizers, build_lr_scheduler,
 )
 import numpy as np
+import math
 
 # Arguments
 parser = argparse.ArgumentParser(
@@ -34,6 +35,8 @@ batch_size = config['training']['batch_size']
 d_steps = config['training']['d_steps']
 restart_every = config['training']['restart_every']
 inception_every = config['training']['inception_every']
+fid_every = config['training']['fid_every']
+fid_fake_imgs_num = config['training']['fid_fake_imgs_num']
 save_every = config['training']['save_every']
 backup_every = config['training']['backup_every']
 sample_nlabels = config['training']['sample_nlabels']
@@ -231,11 +234,24 @@ while True:
                 x = evaluator.create_samples(ztest, y_inst)
                 logger.add_imgs(x, '%04d' % y_inst, it)
 
-        # (ii) Compute inception if necessary
+        # (ii) Compute inception or fid if necessary
         if inception_every > 0 and ((it + 1) % inception_every) == 0:
+            print('Computing inception score...')
             inception_mean, inception_std = evaluator.compute_inception_score()
             logger.add('inception_score', 'mean', inception_mean, it=it)
             logger.add('inception_score', 'stddev', inception_std, it=it)
+
+        if fid_every > 0 and ((it+1) % fid_every) == 0:
+            # generate and save fake images
+            print('Generating fake images to compute fid...')
+            fid_fake_image_save_dir=os.path.join(out_dir, 'imgs','fid_fake_imgs')
+            evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
+            print('Computiong fid...')
+            fid_img_size = (config['data']['img_size'], config['data']['img_size'])
+            fid = evaluator.compute_fid_score(generated_img_path = fid_fake_image_save_dir, 
+                                                gt_path = config['data']['train_dir'] + '/0/', 
+                                                img_size = fid_img_size)
+            logger.add('fid', 'score', fid, it=it)
 
         # (iii) Backup if necessary
         if ((it + 1) % backup_every) == 0:

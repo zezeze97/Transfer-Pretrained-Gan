@@ -31,6 +31,8 @@ training:
   sample_every: 1000
   sample_nlabels: 20
   inception_every: -1 
+  fid_every: -1
+  fid_fake_imgs_num: 60000
   save_every: 900
   backup_every: 100000
   restart_every: -1
@@ -48,6 +50,8 @@ test:
   sample_nrow: 8
   use_model_average: true
   compute_inception: false
+  compute_fid: false
+  fid_fake_imgs_num: 60000
   conditional_samples: false
   model_file: model.pt
 interpolations:

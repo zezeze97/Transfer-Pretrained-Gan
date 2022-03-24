@@ -35,7 +35,8 @@ sample_nrow = config['test']['sample_nrow']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 img_dir = path.join(out_dir, 'test', 'img')
 img_all_dir = path.join(out_dir, 'test', 'img_all')
-
+fid_test_dir = path.join(out_dir, 'test', 'fid_fake_imgs')
+fid_fake_imgs_num = config['test']['fid_fake_imgs_num']
 # Creat missing directories
 if not path.exists(img_dir):
     os.makedirs(img_dir)
@@ -107,6 +108,18 @@ if config['test']['compute_inception']:
     print('Computing inception score...')
     inception_mean, inception_std = evaluator.compute_inception_score()
     print('Inception score: %.4f +- %.4f' % (inception_mean, inception_std))
+
+# FID
+if config['test']['compute_fid']:
+    # generate and save fake images
+    print('Generating fake images to compute fid...')
+    evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_test_dir)
+    print('Computing FID score...')
+    fid_img_size = (config['data']['img_size'], config['data']['img_size'])
+    fid = evaluator.compute_fid_score(generated_img_path = fid_test_dir, 
+                                        gt_path = config['data']['train_dir'] + '/0/', 
+                                        img_size = fid_img_size)
+    print('FID: ', fid)
 
 # Samples
 print('Creating samples...')

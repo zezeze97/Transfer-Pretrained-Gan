@@ -25,13 +25,18 @@ training:
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   finetune: true
   out_dir: output/finetune/lsun_kitchen_multivariate_normal
-  inception_every: 10000
+  inception_every: -1
+  fid_every: 1000
+  fid_fake_imgs_num: 1000
+  backup_every: 1000
 test:
   model_file: 'model.pt'
   batch_size: 32 
   sample_size: 64 
   sample_nrow: 8
-  compute_inception: true
+  compute_inception: false
+  compute_fid: true
+  fid_fake_imgs_num: 60000
 interpolations:
   nzs: 10
   nsubsteps: 75
