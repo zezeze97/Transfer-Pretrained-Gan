@@ -17,8 +17,7 @@ print('latentvecs shape: ', latent_vecs.shape)
 # compute mean and cov of latent_vecs
 mean = np.mean(latent_vecs, axis= 0)
 cov = np.cov(latent_vecs, rowvar=False)
-# np.save('outputs/generate_results/im2latent_save_dir_v2/mean.npy', mean)
-# np.save('outputs/generate_results/im2latent_save_dir_v2/cov.npy', cov)
+
 np.save(prefix+'/mean.npy', mean)
 print('mean shape', mean.shape)
 np.save(prefix+'/cov.npy', cov)
