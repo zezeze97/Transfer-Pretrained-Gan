@@ -46,3 +46,7 @@
     ```
     python test.py PATH_TO_CONFIG
     ```
+
+todo:
+    flowers finetuning
+    flowers_latent_vecs_find
