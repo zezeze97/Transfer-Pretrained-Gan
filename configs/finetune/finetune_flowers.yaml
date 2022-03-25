@@ -31,7 +31,6 @@ training:
   inception_every: -1
   fid_every: 1000
   fid_fake_imgs_num: 1000
-  backup_every: 1000
 test:
   model_file: 'model.pt'
   batch_size: 32 
