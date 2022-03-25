@@ -1,11 +1,11 @@
 data:
   type: image
-  train_dir: data/Flowers_split
-  test_dir: data/Flowers_split
+  train_dir: data/Flowers
+  test_dir: data/Flowers
   lsun_categories_train: [kitchen_train]
   lsun_categories_test: [kitchen_val]
   img_size: 128
-  nlabels: 102
+  nlabels: 1
 generator:
   name: resnet2
   kwargs:
@@ -19,19 +19,15 @@ discriminator:
     nfilter_max: 1024
     embed_size: 256
 z_dist:
-  type: multivariate_normal
+  type: gauss
   dim: 256
-  mean_path: null
-  cov_path: null
 training:
-  batch_size: 64
+  batch_size: 32
   change_generator_embedding_layer: true
   change_discriminator_fc_layer: true
-  pretrain_ckpt_file: null
-  generator_pretrained_ckpt_file:
-  discriminator_pretrained_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/flowers_split_shift
+  out_dir: output/finetune/flowers
   inception_every: -1
   fid_every: 1000
   fid_fake_imgs_num: 1000

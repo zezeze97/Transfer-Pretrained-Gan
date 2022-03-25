@@ -170,16 +170,32 @@ finetune_mode = config['training']['finetune']
 if finetune_mode:
     if change_discriminator_fc_layer and change_discriminator_fc_layer:
         print('change generator embedding layer and discriminator fc layer!!!')
-        # load pretrained generator
-        generator.load_state_dict(add_module_str_in_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file'])))
-        print('pretrained generator loaded!')
-        # load pretrained discriminator
-        pretrained_discriminator_loaded_dict = torch.load(config['training']['discriminator_pretrained_ckpt_file'])['discriminator']
-        discriminator_state_dict = discriminator.state_dict()
-        new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k not in ['module.fc.weight', 'module.fc.bias']}
-        discriminator_state_dict.update(new_dict)
-        discriminator.load_state_dict(discriminator_state_dict)
-        print('pretrained discriminator loaded!')
+        if config['training']['pretrain_ckpt_file'] is None:
+            # load pretrained generator
+            generator.load_state_dict(add_module_str_in_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file'])))
+            print('pretrained generator loaded!')
+            # load pretrained discriminator
+            pretrained_discriminator_loaded_dict = torch.load(config['training']['discriminator_pretrained_ckpt_file'])['discriminator']
+            discriminator_state_dict = discriminator.state_dict()
+            new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k not in ['module.fc.weight', 'module.fc.bias']}
+            discriminator_state_dict.update(new_dict)
+            discriminator.load_state_dict(discriminator_state_dict)
+            print('pretrained discriminator loaded!')
+        else:
+            # load pretrained generator
+            pretrained_generator_loaded_dict = torch.load(config['training']['pretrain_ckpt_file'])['generator']
+            generator_state_dict = generator.state_dict()
+            new_dict = {k: v for k, v in pretrained_generator_loaded_dict.items() if k != 'module.embedding.weight'}
+            generator_state_dict.update(new_dict)
+            generator.load_state_dict(generator_state_dict)
+            print('pretrained generator loaded!')
+            # load pretrained discriminator
+            pretrained_discriminator_loaded_dict = torch.load(config['training']['pretrain_ckpt_file'])['discriminator']
+            discriminator_state_dict = discriminator.state_dict()
+            new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k not in ['module.fc.weight', 'module.fc.bias']}
+            discriminator_state_dict.update(new_dict)
+            discriminator.load_state_dict(discriminator_state_dict)
+            print('pretrained discriminator loaded!')
     else:
         pretrained_ckpt = config['training']['pretrain_ckpt_file']
         load_dict = checkpoint_io.load(pretrained_ckpt)
