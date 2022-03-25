@@ -26,7 +26,12 @@ def remove_module_str_in_state_dict(state_dict):
         state_dict_rename[name] = v
     return state_dict_rename
 
-
+def add_module_str_in_state_dict(state_dict):
+    state_dict_rename = OrderedDict()
+    for k, v in state_dict.items():
+        name = "module." + k # add module
+        state_dict_rename[name] = v
+    return state_dict_rename
 
 # Arguments
 parser = argparse.ArgumentParser(
@@ -166,12 +171,12 @@ if finetune_mode:
     if change_discriminator_fc_layer and change_discriminator_fc_layer:
         print('change generator embedding layer and discriminator fc layer!!!')
         # load pretrained generator
-        generator.load_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file']))
+        generator.load_state_dict(add_module_str_in_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file'])))
         print('pretrained generator loaded!')
         # load pretrained discriminator
-        pretrained_discriminator_loaded_dict = remove_module_str_in_state_dict(torch.load(config['training']['discriminator_pretrained_ckpt_file'])['discriminator'])
+        pretrained_discriminator_loaded_dict = torch.load(config['training']['discriminator_pretrained_ckpt_file'])['discriminator']
         discriminator_state_dict = discriminator.state_dict()
-        new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k != 'fc.weight'}
+        new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k not in ['module.fc.weight', 'module.fc.bias']}
         discriminator_state_dict.update(new_dict)
         discriminator.load_state_dict(discriminator_state_dict)
         print('pretrained discriminator loaded!')

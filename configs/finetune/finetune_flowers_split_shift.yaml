@@ -19,8 +19,10 @@ discriminator:
     nfilter_max: 1024
     embed_size: 256
 z_dist:
-  type: gauss
+  type: multivariate_normal
   dim: 256
+  mean_path: null
+  cov_path: null
 training:
   batch_size: 64
   change_generator_embedding_layer: true
@@ -28,7 +30,7 @@ training:
   generator_pretrained_ckpt_file:
   discriminator_pretrained_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/lsun_kitchen_multivariate_normal_batchmode
+  out_dir: output/finetune/flowers_split_shift
   inception_every: -1
   fid_every: 1000
   fid_fake_imgs_num: 1000
