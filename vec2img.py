@@ -199,7 +199,7 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         total_loss.backward()
         optimizer.step()
-        writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+        
 
         # Print stats
         if use_regularization:

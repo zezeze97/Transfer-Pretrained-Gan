@@ -180,7 +180,7 @@ for index, (x_real, y) in enumerate(train_loader):
         optimizer.zero_grad()
         total_loss.backward()
         optimizer.step()
-        writer.add_scalar('total loss', total_loss.cpu().data.numpy(), it)
+        
 
         # Print stats
         if use_regularization:
