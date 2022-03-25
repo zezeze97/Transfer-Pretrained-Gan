@@ -179,10 +179,43 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('output/img2vec2img/lsun_kitchen_batch_mode/latentvecs_t-SNE.png')
 
+    if type == 'latentvecs_reg':
+        num = 1000
+
+        latentvec_dir = 'output/vec2img/lsun_kitchen_mini_train_batch_mode/latentvecs/'
+        samples_kitchen = load_latentvecs(latentvec_dir, num) 
+
+        latentvec_reg_dir = 'output/vec2img/lsun_kitchen_mini_train_batch_mode_reg/latentvecs/'
+        samples_kitchen_reg = load_latentvecs(latentvec_reg_dir, num) 
+
+        zdist = get_zdist('gauss', 256, mean=None, cov=None, device='cpu')
+        samples_bedroom = zdist.sample((1000,)).numpy() 
+
+        all_samples = np.concatenate((samples_kitchen, samples_kitchen_reg, samples_bedroom),axis=0)
+        print(all_samples.shape)
+        print('Computing t-SNE embedding')
+        # TSEN default: perplexity=30, n_iter=1000
+        tsne = TSNE(n_components=2, random_state=SEED, perplexity=30, n_iter=1000)  # init='pca'
+        t0 = time()
+        all_results = tsne.fit_transform(all_samples)
+        print('time: %.2f' % (time() - t0))
+        # plot_embedding(results, labels, 't-SNE embedding of images')
+        kitchen_result = all_results[:1000,:]
+        plt.scatter(x=kitchen_result[:, 0], y=kitchen_result[:, 1], c='g', s=1, label='kitchen_latent_vecs')
+
+        kitchen_reg_result = all_results[1000:2000,:]
+        plt.scatter(x=kitchen_reg_result[:, 0], y=kitchen_reg_result[:, 1], c='b', s=1, label='reg_kitchen_latent_vecs')
+
+        bedroom_result = all_results[2000:,:]
+        plt.scatter(x=bedroom_result[:, 0], y=bedroom_result[:, 1], c='r', s=1, label='bedroom_latent_vecs')
+
+        plt.title('latentvecs_t-SNE')
+        plt.legend()  # loc='upper left'
+        plt.savefig('output/vec2img/kitchen_latentvecs_t-SNE.png')
 
 
 
 
 if __name__ == '__main__':
-    type = 'latentvecs'
+    type = 'latentvecs_reg'
     main(type)
