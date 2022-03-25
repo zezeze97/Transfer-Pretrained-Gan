@@ -17,6 +17,8 @@ z_dist:
   type: gauss
   dim: 256
 training:
+  change_generator_embedding_layer: false
+  change_discriminator_fc_layer: false
   finetune: false
   out_dir: output/default
   gan_type: standard

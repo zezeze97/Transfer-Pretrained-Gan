@@ -17,6 +17,16 @@ from gan_training.config import (
 )
 import numpy as np
 import math
+from collections import OrderedDict
+
+def remove_module_str_in_state_dict(state_dict):
+    state_dict_rename = OrderedDict()
+    for k, v in state_dict.items():
+        name = k.replace("module.", "") # remove `module.`
+        state_dict_rename[name] = v
+    return state_dict_rename
+
+
 
 # Arguments
 parser = argparse.ArgumentParser(
@@ -42,6 +52,8 @@ backup_every = config['training']['backup_every']
 sample_nlabels = config['training']['sample_nlabels']
 out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
+change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
+change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
 
 # Create missing directories
 if not path.exists(out_dir):
@@ -151,8 +163,21 @@ tstart = t0 = time.time()
 # Load pretrained ckpt
 finetune_mode = config['training']['finetune']
 if finetune_mode:
-    pretrained_ckpt = config['training']['pretrain_ckpt_file']
-    load_dict = checkpoint_io.load(pretrained_ckpt)
+    if change_discriminator_fc_layer and change_discriminator_fc_layer:
+        print('change generator embedding layer and discriminator fc layer!!!')
+        # load pretrained generator
+        generator.load_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file']))
+        print('pretrained generator loaded!')
+        # load pretrained discriminator
+        pretrained_discriminator_loaded_dict = remove_module_str_in_state_dict(torch.load(config['training']['discriminator_pretrained_ckpt_file'])['discriminator'])
+        discriminator_state_dict = discriminator.state_dict()
+        new_dict = {k: v for k, v in pretrained_discriminator_loaded_dict.items() if k != 'fc.weight'}
+        discriminator_state_dict.update(new_dict)
+        discriminator.load_state_dict(discriminator_state_dict)
+        print('pretrained discriminator loaded!')
+    else:
+        pretrained_ckpt = config['training']['pretrain_ckpt_file']
+        load_dict = checkpoint_io.load(pretrained_ckpt)
     it = epoch_idx = -1
 
 # Load checkpoint if it exists
