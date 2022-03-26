@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-prefix = 'output/vec2img/flowers_batch_mode'
+prefix = 'output/vec2img/lsun_kitchen_mini_train_batch_mode_reg'
 # latentvec_dir = 'outputs/generate_results/im2latent_save_dir_v2/latentvecs/'
 latentvec_dir = prefix + '/latentvecs/'
 
