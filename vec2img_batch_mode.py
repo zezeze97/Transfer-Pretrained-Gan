@@ -139,7 +139,10 @@ for index, (x_real, y) in enumerate(train_loader):
     latent_vecs_embedding_layer.train()
     if omit_embedding_layer:
         generator.eval()
-        generator.embedding.train()
+        try:
+            generator.embedding.train()
+        except AttributeError as e:
+            print(e)
     else:
         generator.eval()
     print('Start Batch %d...' % (index+1))

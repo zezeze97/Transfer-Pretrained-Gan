@@ -8,28 +8,25 @@ data:
   img_size: 128
   nlabels: 1
 generator:
-  name: resnet2
+  name: resnet2_omit_class_embedding
   kwargs:
     nfilter: 64
     nfilter_max: 1024
-    embed_size: 256
 z_dist:
   type: gauss
-  dim: 256
+  dim: 512
 training:
-  load_from: null
   use_regularization: false
   regularization:
     type: l2
     lambda : 0.01
   nworkers: 8
   batch_size: 128
-  epochs: 5000
-  lr: 0.01
+  iter_per_batch: 10000
+  lr: 0.1
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   omit_embedding_layer: true
-  save_per_epoch: 100
-  out_dir: output/vec2img/flowers
-  lr_scheduler:
-    milestones_step: 3000
+  out_dir: output/vec2img/flowers_512dim_batchmode
+  lr_scheduler: 
+    step_size: 8000
     gamma: 0.1
