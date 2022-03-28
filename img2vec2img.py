@@ -47,6 +47,7 @@ save_per_epoch = config['training']['save_per_epoch']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 use_regularization = config['training']['use_regularization']
 regularization_lambda = config['training']['regularization']['lambda']
+omit_embedding_layer = config['training']['omit_embedding_layer']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -114,7 +115,15 @@ writer = SummaryWriter(logdir=out_dir+'/monitoring')
 pretrained_ckpt = config['training']['pretrain_ckpt_file']
 loaded_dict = torch.load(pretrained_ckpt)
 print('Loading pretrained generator...')
-generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
+if omit_embedding_layer:
+    print('omit embedding_layer of generator!')
+    pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
+    generator_state_dict = generator.state_dict()
+    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    generator_state_dict.update(new_dict)
+    generator.load_state_dict(generator_state_dict)
+else:
+    generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
 print('Pretrained generator loaded!')
 it = -1
 
