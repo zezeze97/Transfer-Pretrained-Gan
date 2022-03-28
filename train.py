@@ -168,7 +168,7 @@ tstart = t0 = time.time()
 # Load pretrained ckpt
 finetune_mode = config['training']['finetune']
 if finetune_mode:
-    if change_discriminator_fc_layer and change_discriminator_fc_layer:
+    if change_generator_embedding_layer and change_discriminator_fc_layer:
         print('change generator embedding layer and discriminator fc layer!!!')
         if config['training']['pretrain_ckpt_file'] is None:
             # load pretrained generator
