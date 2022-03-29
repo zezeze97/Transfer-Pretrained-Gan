@@ -156,12 +156,12 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('outputs/generate_results/kitchen_t-SNE.png')
     if type == 'latentvecs':
-        latentvec_dir = 'output/img2vec2img/lsun_kitchen_batch_mode/latentvecs/'
-        num = 1000
-        samples_kitchen = load_latentvecs(latentvec_dir, num)  
+        latentvec_dir = 'output/vec2img/flowers_small_lr/latentvecs/'
+        num = 8160
+        samples_flowers = load_latentvecs(latentvec_dir, num)  
         zdist = get_zdist('gauss', 256, mean=None, cov=None, device='cpu')
-        samples_bedroom = zdist.sample((1000,)).numpy() 
-        all_samples = np.concatenate((samples_kitchen,samples_bedroom),axis=0)
+        samples_noraml = zdist.sample((num,)).numpy() 
+        all_samples = np.concatenate((samples_flowers,samples_noraml),axis=0)
         print(all_samples.shape)
         print('Computing t-SNE embedding')
         # TSEN default: perplexity=30, n_iter=1000
@@ -170,14 +170,14 @@ def main(type):
         all_results = tsne.fit_transform(all_samples)
         print('time: %.2f' % (time() - t0))
         # plot_embedding(results, labels, 't-SNE embedding of images')
-        kitchen_result = all_results[:1000,:]
-        plt.scatter(x=kitchen_result[:, 0], y=kitchen_result[:, 1], c='g', s=1, label='kitchen_latent_vecs')
-        bedroom_result = all_results[1000:,:]
-        plt.scatter(x=bedroom_result[:, 0], y=bedroom_result[:, 1], c='r', s=1, label='bedroom_latent_vecs')
+        flowers_result = all_results[:num,:]
+        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='g', s=1, label='flowers_latent_vecs')
+        normal_result = all_results[num:,:]
+        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='r', s=1, label='source_latent_vecs')
 
         plt.title('latentvecs_t-SNE')
         plt.legend()  # loc='upper left'
-        plt.savefig('output/img2vec2img/lsun_kitchen_batch_mode/latentvecs_t-SNE.png')
+        plt.savefig('output/vec2img/flowers_small_lr/latentvecs_t-SNE.png')
 
     if type == 'latentvecs_reg':
         num = 1000
@@ -217,5 +217,5 @@ def main(type):
 
 
 if __name__ == '__main__':
-    type = 'latentvecs_reg'
+    type = 'latentvecs'
     main(type)
