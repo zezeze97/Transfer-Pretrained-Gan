@@ -14,7 +14,7 @@ import torchvision.models as models
 from torchvision.models.feature_extraction import get_graph_node_names
 from torchvision.models.feature_extraction import create_feature_extractor
 from itertools import chain
-
+import numpy as np
 
 def remove_module_str_in_state_dict(state_dict):
     state_dict_rename = OrderedDict()
@@ -45,6 +45,7 @@ lr = config['training']['lr']
 out_dir = config['training']['out_dir']
 save_per_epoch = config['training']['save_per_epoch']
 checkpoint_dir = path.join(out_dir, 'chkpts')
+latentvecs_dir = path.join(out_dir,'latentvecs')
 use_regularization = config['training']['use_regularization']
 regularization_lambda = config['training']['regularization']['lambda']
 omit_embedding_layer = config['training']['omit_embedding_layer']
@@ -53,6 +54,8 @@ if not path.exists(out_dir):
     os.makedirs(out_dir)
 if not path.exists(checkpoint_dir):
     os.makedirs(checkpoint_dir)
+if not path.exists(latentvecs_dir):
+    os.makedirs(latentvecs_dir)
 
 # use gpu
 device = torch.device("cuda:0" if is_cuda else "cpu")
@@ -236,6 +239,14 @@ for epoch in range(epochs):
         writer.add_image('gen_images', gen_images, global_step = epoch+1)
         img2vec.train()
 
+
+# save latentvecs
+img2vec.eval()
+for index, (x_real, y) in enumerate(train_loader):
+    with torch.no_grad():
+        z = img2vec(x_real)
+    latentvecs = z.detach().cpu().numpy()
+    np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 
 
 

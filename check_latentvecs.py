@@ -65,10 +65,20 @@ generator = generator.to(device)
 
 
 # Load generator ckpt
-pretrained_ckpt = args.generator_ckpt
-loaded_dict = torch.load(pretrained_ckpt)
 print('Loading pretrained generator...')
-generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict))
+if config['training']['omit_embedding_layer']:
+    print('omit embedding_layer of generator!')
+    pretrained_ckpt = args.generator_ckpt
+    loaded_dict = torch.load(pretrained_ckpt)
+    pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
+    generator_state_dict = generator.state_dict()
+    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    generator_state_dict.update(new_dict)
+    generator.load_state_dict(generator_state_dict)
+else:
+    pretrained_ckpt = args.generator_ckpt
+    loaded_dict = torch.load(pretrained_ckpt)
+    generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict))
 print('Pretrained generator loaded!')
 
 # set eval mode 

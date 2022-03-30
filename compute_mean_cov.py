@@ -34,7 +34,8 @@ train_dataset, nlabels = get_dataset(
     name=config['data']['type'],
     data_dir=config['data']['train_dir'],
     size=config['data']['img_size'],
-    lsun_categories=config['data']['lsun_categories_train']
+    lsun_categories=config['data']['lsun_categories_train'],
+    simple_transform=config['data']['simple_transform']
 )
 train_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -65,6 +66,7 @@ for x_real, y in train_loader:
     latentvecs_list.append(z.cpu().numpy())
 # concat_result
 for i,z in enumerate(latentvecs_list):
+    np.save(out_dir + '/latentvecs/batch_'+str(i)+'.npy', z)
     if i == 0:
         latentvecs = z
     else:
