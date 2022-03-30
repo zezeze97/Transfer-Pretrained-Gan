@@ -33,7 +33,7 @@ training:
   lr: 0.0001
   omit_embedding_layer: true
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
-  save_per_epoch: 5
+  save_per_epoch: 20
   out_dir: output/img2vec2img/flowers_512dim_reg
   lr_scheduler:
     milestones_step: 800
