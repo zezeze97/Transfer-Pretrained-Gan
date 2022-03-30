@@ -156,10 +156,10 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('outputs/generate_results/kitchen_t-SNE.png')
     if type == 'latentvecs':
-        latentvec_dir = 'output/vec2img/flowers_small_lr/latentvecs/'
-        num = 8160
+        latentvec_dir = 'output/img2vec2img/flowers_512dim/latentvecs/'
+        num = 8000
         samples_flowers = load_latentvecs(latentvec_dir, num)  
-        zdist = get_zdist('gauss', 256, mean=None, cov=None, device='cpu')
+        zdist = get_zdist('gauss', 512, mean=None, cov=None, device='cpu')
         samples_noraml = zdist.sample((num,)).numpy() 
         all_samples = np.concatenate((samples_flowers,samples_noraml),axis=0)
         print(all_samples.shape)
@@ -177,7 +177,7 @@ def main(type):
 
         plt.title('latentvecs_t-SNE')
         plt.legend()  # loc='upper left'
-        plt.savefig('output/vec2img/flowers_small_lr/latentvecs_t-SNE.png')
+        plt.savefig('output/img2vec2img/flowers_512dim/latentvecs_t-SNE.png')
 
     if type == 'latentvecs_reg':
         num = 1000
