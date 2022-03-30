@@ -26,7 +26,7 @@ training:
   use_regularization: true
   regularization:
     type: kl
-    lambda : 0.01
+    lambda : 0.1
   nworkers: 8
   batch_size: 64
   epochs: 1000
