@@ -32,7 +32,6 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('--config', type=str, help='Path to config file.')
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
-parser.add_argument('--generator_ckpt', type=str, help='Path to generator ckpt.')
 parser.add_argument('--latentdir', type=str, help='Root path of latentvecs.')
 parser.add_argument('--outdir', type=str, help='Save path.')
 args = parser.parse_args()
@@ -65,22 +64,29 @@ print(generator)
 generator = generator.to(device)
 
 
-# Load generator ckpt
-print('Loading pretrained generator...')
-if config['training']['omit_embedding_layer']:
-    print('omit embedding_layer of generator!')
-    pretrained_ckpt = args.generator_ckpt
-    loaded_dict = torch.load(pretrained_ckpt)
-    pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
-    generator_state_dict = generator.state_dict()
-    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
-    generator_state_dict.update(new_dict)
-    generator.load_state_dict(generator_state_dict)
-else:
-    pretrained_ckpt = args.generator_ckpt
-    loaded_dict = torch.load(pretrained_ckpt)
-    generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict))
-print('Pretrained generator loaded!')
+# Load pretrained ckpt
+finetune_mode = config['training']['finetune']
+change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
+change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
+if finetune_mode:
+    if change_generator_embedding_layer and change_discriminator_fc_layer:
+        print('change generator embedding layer!!!')
+        if config['training']['pretrain_ckpt_file'] is None:
+            # load pretrained generator
+            generator.load_state_dict(torch.load(config['training']['generator_pretrained_ckpt_file']))
+            print('pretrained generator loaded!')
+        else:
+            # load pretrained generator
+            pretrained_generator_loaded_dict = remove_module_str_in_state_dict(torch.load(config['training']['pretrain_ckpt_file'])['generator'])
+            generator_state_dict = generator.state_dict()
+            new_dict = {k: v for k, v in pretrained_generator_loaded_dict.items() if k != 'embedding.weight'}
+            generator_state_dict.update(new_dict)
+            generator.load_state_dict(generator_state_dict)
+            print('pretrained generator loaded!')
+    else:
+        pretrained_generator_loaded_dict = remove_module_str_in_state_dict(torch.load(config['training']['pretrain_ckpt_file'])['generator']) 
+        generator.load_state_dict(pretrained_generator_loaded_dict)
+        print('pretrained generator loaded!')
 
 # set eval mode 
 generator.eval()
