@@ -15,6 +15,7 @@ from torchvision.models.feature_extraction import get_graph_node_names
 from torchvision.models.feature_extraction import create_feature_extractor
 from itertools import chain
 import numpy as np
+from tqdm import tqdm
 
 
 def remove_module_str_in_state_dict(state_dict):
@@ -86,7 +87,7 @@ generator.eval()
 
 # visualize latentvecs
 latentvecs_list = os.listdir(args.latentdir)
-for index, filename in enumerate(latentvecs_list):
+for index, filename in tqdm(enumerate(latentvecs_list)):
     latentvecs = np.load(path.join(args.latentdir,filename))
     # numpy -> torch
     latentvecs = torch.from_numpy(latentvecs).to(device)

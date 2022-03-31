@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-prefix = 'output/vec2img/flowers_small_lr'
+prefix = 'output/vec2img/flowers_512dim_batchmode'
 # latentvec_dir = 'outputs/generate_results/im2latent_save_dir_v2/latentvecs/'
 latentvec_dir = prefix + '/latentvecs/'
 
@@ -25,3 +25,4 @@ print('cov shape', cov.shape)
 print('mean',np.mean(mean))
 print('var',np.mean(cov.diagonal()))
 
+print('latent_vecs shape: ',latent_vecs.shape)

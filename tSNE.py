@@ -156,10 +156,10 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('outputs/generate_results/kitchen_t-SNE.png')
     if type == 'latentvecs':
-        latentvec_dir = 'output/img2vec2img/flowers_512dim/latentvecs/'
+        latentvec_dir = 'output/vec2img/flowers_512dim_batchmode/latentvecs/'
         num = 8000
         samples_flowers = load_latentvecs(latentvec_dir, num)  
-        zdist = get_zdist('gauss', 512, mean=None, cov=None, device='cpu')
+        zdist = get_zdist('multivariate_normal', 256, mean= torch.FloatTensor(np.load('output/vec2img/flowers_512dim_batchmode/mean.npy')), cov= torch.FloatTensor(np.load('output/vec2img/flowers_512dim_batchmode/cov.npy')), device='cpu')
         samples_noraml = zdist.sample((num,)).numpy() 
         all_samples = np.concatenate((samples_flowers,samples_noraml),axis=0)
         print(all_samples.shape)
@@ -170,14 +170,36 @@ def main(type):
         all_results = tsne.fit_transform(all_samples)
         print('time: %.2f' % (time() - t0))
         # plot_embedding(results, labels, 't-SNE embedding of images')
-        flowers_result = all_results[:num,:]
-        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='g', s=1, label='flowers_latent_vecs')
+        
         normal_result = all_results[num:,:]
-        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='r', s=1, label='source_latent_vecs')
+        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='g', s=1, label='estimated_latent_vecs', alpha=0.3)
+        flowers_result = all_results[:num,:]
+        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='r', marker='x', s=1, label='flowers_latent_vecs', alpha=1)
 
         plt.title('latentvecs_t-SNE')
         plt.legend()  # loc='upper left'
-        plt.savefig('output/img2vec2img/flowers_512dim/latentvecs_t-SNE.png')
+        plt.savefig('output/vec2img/flowers_512dim_batchmode/latentvecs_t-SNE_estimate.png')
+
+
+    if type == 'latentvecs_only':
+        latentvec_dir = 'output/vec2img/flowers_512dim_batchmode/latentvecs/'
+        num = 8064
+        samples_flowers = load_latentvecs(latentvec_dir, num)  
+        all_samples = samples_flowers
+        print(all_samples.shape)
+        print('Computing t-SNE embedding')
+        # TSEN default: perplexity=30, n_iter=1000
+        tsne = TSNE(n_components=2, random_state=SEED, perplexity=30, n_iter=1000)  # init='pca'
+        t0 = time()
+        all_results = tsne.fit_transform(all_samples)
+        print('time: %.2f' % (time() - t0))
+        # plot_embedding(results, labels, 't-SNE embedding of images')
+        flowers_result = all_results
+        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='g', s=1, label='flowers_latent_vecs')
+
+        plt.title('latentvecs_t-SNE')
+        plt.legend()  # loc='upper left'
+        plt.savefig('output/vec2img/flowers_512dim_batchmode/latentvecs_t-SNE_flowers_only.png')
 
     if type == 'latentvecs_reg':
         num = 1000
