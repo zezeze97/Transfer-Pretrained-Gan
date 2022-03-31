@@ -151,16 +151,7 @@ ytest.clamp_(None, nlabels-1)
 ztest = zdist.sample((ntest,))
 utils.save_images(x_real, path.join(out_dir, 'real.png'))
 
-# Test generator
-if config['training']['take_model_average']:
-    generator_test = copy.deepcopy(generator)
-    checkpoint_io.register_modules(generator_test=generator_test)
-else:
-    generator_test = generator
 
-# Evaluator
-evaluator = Evaluator(generator_test, zdist, ydist,
-                      batch_size=batch_size, device=device)
 
 # Train
 tstart = t0 = time.time()
@@ -199,6 +190,7 @@ if finetune_mode:
     else:
         pretrained_ckpt = config['training']['pretrain_ckpt_file']
         load_dict = checkpoint_io.load(pretrained_ckpt)
+        print('pretrained generator and discriminator loaded!')
     it = epoch_idx = -1
 
 # Load checkpoint if it exists
@@ -211,6 +203,18 @@ else:
     epoch_idx = load_dict.get('epoch_idx', -1)
     logger.load_stats('stats.p')
 
+
+# Test generator
+if config['training']['take_model_average']:
+    generator_test = copy.deepcopy(generator)
+    checkpoint_io.register_modules(generator_test=generator_test)
+else:
+    generator_test = generator
+
+# Evaluator
+evaluator = Evaluator(generator_test, zdist, ydist,
+                      batch_size=batch_size, device=device)
+                      
 # Reinitialize model average if needed
 if (config['training']['take_model_average']
         and config['training']['model_average_reinit']):
@@ -227,6 +231,15 @@ trainer = Trainer(
     reg_type=config['training']['reg_type'],
     reg_param=config['training']['reg_param']
 )
+
+# sample before training
+print('Creating init samples...')
+x = evaluator.create_samples(ztest, ytest)
+logger.add_imgs(x, 'all', it)
+for y_inst in range(sample_nlabels):
+    x = evaluator.create_samples(ztest, y_inst)
+    logger.add_imgs(x, '%04d' % y_inst, it)
+
 
 # Training loop
 print('Start training...')
