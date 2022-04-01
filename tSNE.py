@@ -156,10 +156,10 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('outputs/generate_results/kitchen_t-SNE.png')
     if type == 'latentvecs':
-        latentvec_dir = 'output/vec2img/flowers_512dim_batchmode/latentvecs/'
-        num = 8000
+        latentvec_dir = 'output/vec2img/lsun_kitchen_mini_train_batch_mode/latentvecs/'
+        num = 2000
         samples_flowers = load_latentvecs(latentvec_dir, num)  
-        zdist = get_zdist('multivariate_normal', 256, mean= torch.FloatTensor(np.load('output/vec2img/flowers_512dim_batchmode/mean.npy')), cov= torch.FloatTensor(np.load('output/vec2img/flowers_512dim_batchmode/cov.npy')), device='cpu')
+        zdist = get_zdist('gauss', 256, mean= None, cov= None, device='cpu')
         samples_noraml = zdist.sample((num,)).numpy() 
         all_samples = np.concatenate((samples_flowers,samples_noraml),axis=0)
         print(all_samples.shape)
@@ -172,13 +172,13 @@ def main(type):
         # plot_embedding(results, labels, 't-SNE embedding of images')
         
         normal_result = all_results[num:,:]
-        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='g', s=1, label='estimated_latent_vecs', alpha=0.3)
+        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='g', s=1, label='bedroom', alpha=0.3)
         flowers_result = all_results[:num,:]
-        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='r', marker='x', s=1, label='flowers_latent_vecs', alpha=1)
+        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='r', marker='x', s=1, label='kitchen', alpha=1)
 
         plt.title('latentvecs_t-SNE')
         plt.legend()  # loc='upper left'
-        plt.savefig('output/vec2img/flowers_512dim_batchmode/latentvecs_t-SNE_estimate.png')
+        plt.savefig('output/vec2img/lsun_kitchen_mini_train_batch_mode/latentvecs_t-SNE.png')
 
 
     if type == 'latentvecs_only':

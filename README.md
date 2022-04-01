@@ -50,3 +50,4 @@
 todo:
     flowers finetuning
     flowers_latent_vecs_find
+    gauss_mixture_modeling latentvecs

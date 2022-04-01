@@ -31,7 +31,7 @@ parser.add_argument('--outdir', type=str, help='Save path.')
 args = parser.parse_args()
 
 # config 
-config = load_config(args.config, default_path=None)
+config = load_config(args.config, default_path='configs/default.yaml')
 is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
 

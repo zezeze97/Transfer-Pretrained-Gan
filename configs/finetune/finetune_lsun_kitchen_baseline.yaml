@@ -24,10 +24,10 @@ training:
   batch_size: 64
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   finetune: true
-  out_dir: output/finetune/lsun_kitchen_gauss
+  out_dir: output/finetune/lsun_kitchen_gauss_baseline
   inception_every: -1
   fid_every: 1000
-  fid_fake_imgs_num: 1000
+  fid_fake_imgs_num: 50000
   backup_every: 1000
 test:
   model_file: 'model.pt'
@@ -36,7 +36,7 @@ test:
   sample_nrow: 8
   compute_inception: false
   compute_fid: true
-  fid_fake_imgs_num: 60000
+  fid_fake_imgs_num: 50000
 interpolations:
   nzs: 10
   nsubsteps: 75
