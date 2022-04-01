@@ -1,10 +1,8 @@
-GPU=$1
+# !/bin/bash
+srun --job-name=ht -p GPU36 --nodes 1 --gres=gpu:1 --qos low --time 120:00:00 \
+    python -u train.py configs/finetune/finetune_lsun_kitchen_baseline.yaml
 
 
-# === Finetune ===
-#CUDA_VISIBLE_DEVICES=$GPU 
-srun --job-name=finetune_lsun_kitchen_shift_batch_mode -p GPU36 --gres=gpu:1 --qos low --time 120:00:00 \
-    python train.py configs/finetune/finetune_lsun_kitchen_shift_batch_mode.yaml
 
 
 
