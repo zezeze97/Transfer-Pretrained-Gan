@@ -22,7 +22,7 @@ z_dist:
   cov_path: 'output/img2vec2img/lsun_kitchen/cov.npy'
 training:
   batch_size: 64
-  pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
+  pretrain_ckpt_file: ./pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   finetune: true
   out_dir: output/finetune/lsun_kitchen_multivariate_normal
   inception_every: -1

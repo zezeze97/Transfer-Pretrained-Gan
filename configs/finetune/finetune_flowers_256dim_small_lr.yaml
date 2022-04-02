@@ -25,7 +25,7 @@ training:
   batch_size: 32
   change_generator_embedding_layer: true
   change_discriminator_fc_layer: true
-  pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  pretrain_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
   out_dir: output/finetune/flowers_256dim_small_lr
   inception_every: -1
