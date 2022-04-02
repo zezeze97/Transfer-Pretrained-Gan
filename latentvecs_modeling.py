@@ -27,8 +27,30 @@ def main(method, prefix):
         print('cov shape', cov.shape)
         print('mean',np.mean(mean))
         print('var',np.mean(cov.diagonal()))
+    
+    if method == 'gauss mixture':
+        # select best gmm model
+        aic_list = []
+        best_aic = np.infty
+        best_n_components = 0
+        for n_components in range(1,15):
+            model = mixture.GaussianMixture(n_components=n_components, covariance_type='full', verbose=2, verbose_interval=1)
+            gm = model.fit(latent_vecs)
+            aic = model.aic(latent_vecs)
+            print('the aic of ',n_components,' is ', aic)
+            aic_list.append(aic)
+            if aic < best_aic:
+                best_aic = aic
+                best_n_components = n_components
+        print("best num of components is ", best_n_components," aic is ", best_aic)
+        model = mixture.GaussianMixture(n_components=best_n_components, covariance_type='full', verbose=2, verbose_interval=1)
+        gm = model.fit(latent_vecs)
+        np.save(prefix+'/components_weights.npy', gm.weights_)
+        np.save(prefix+'/gmm_mean.npy', gm.means_)
+        np.save(prefix+'/gmm_cov.npy', gm.covariances_)
+
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/lsun_kitchen_mini_train_batch_mode'
-    method = 'shift gauss'
+    prefix = 'output/vec2img/flowers_512dim_batchmode'
+    method = 'gauss mixture'
     main(method, prefix)
