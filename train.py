@@ -45,10 +45,11 @@ args = parser.parse_args()
 config = load_config(args.config, 'configs/default.yaml')
 is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
-tmp_ckpt_file = config['training']['pretrain_ckpt_file'] 
-config['training']['pretrain_ckpt_file'] = os.path.join(
-        os.path.split(os.path.abspath(__file__))[0], tmp_ckpt_file) 
-print(config['training']['pretrain_ckpt_file']) 
+if config['training']['pretrain_ckpt_file'] is not None:
+    tmp_ckpt_file = config['training']['pretrain_ckpt_file'] 
+    config['training']['pretrain_ckpt_file'] = os.path.join(
+            os.path.split(os.path.abspath(__file__))[0], tmp_ckpt_file) 
+    print(config['training']['pretrain_ckpt_file']) 
 
 # Short hands
 batch_size = config['training']['batch_size']
