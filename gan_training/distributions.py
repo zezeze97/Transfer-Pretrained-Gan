@@ -1,8 +1,9 @@
 import torch
-from torch import distributions
+from torch import distributions 
+import numpy as np
 
 
-def get_zdist(dist_name, dim, mean, cov, device=None):
+def get_zdist(dist_name, dim, mean=None, cov=None, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):
     # Get distribution
     if dist_name == 'uniform':
         low = -torch.ones(dim, device=device)
@@ -16,6 +17,8 @@ def get_zdist(dist_name, dim, mean, cov, device=None):
         mean.to(device)
         cov.to(device)
         zdist = distributions.MultivariateNormal(loc=mean, covariance_matrix=cov)
+    elif dist_name == 'gmm':
+        zdist = GMM(gmm_components_weight, gmm_mean, gmm_cov, device)
 
     else:
         raise NotImplementedError
@@ -46,3 +49,20 @@ def interpolate_sphere(z1, z2, t):
     z = s1 * z1 + s2 * z2
 
     return z
+
+class GMM:  
+   def __init__(self, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):  
+       self.gmm_components_weight = gmm_components_weight  
+       self.gmm_mean = gmm_mean
+       self.gmm_cov = gmm_cov
+       self.device = device
+ 
+   def sample(self, sample_shape):  
+       num_sample = sample_shape[0]
+       num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
+       points = []  
+       for component_index, num in enumerate(num_for_classes):  
+           mean = self.gmm_mean[component_index,:]
+           cov = self.gmm_cov[component_index,:,:]
+           points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
+       return torch.FloatTensor(np.concatenate(points)).to(self.device)  

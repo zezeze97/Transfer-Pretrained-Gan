@@ -91,13 +91,28 @@ if config['z_dist']['type'] == 'multivariate_normal':
     cov_path = config['z_dist']['cov_path']
     mean = torch.FloatTensor(np.load(mean_path))
     cov = torch.FloatTensor(np.load(cov_path))
+# load gmm parameters if neccessary
+if config['z_dist']['type'] == 'gmm':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
+
 
 # Distributions
 ydist = get_ydist(nlabels, device=device)
-if config['z_dist']['type'] == 'multivariate_normal':
-    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
+if config['z_dist']['type'] == 'gauss':
+    zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
+elif config['z_dist']['type'] == 'multivariate_normal':
+    zdist = get_zdist(dist_name=config['z_dist']['type'], dim=config['z_dist']['dim'], mean=mean, cov=cov, device=device)
+elif config['z_dist']['type'] == 'gmm':
+    zdist = get_zdist(dist_name=config['z_dist']['type'], 
+                        dim=config['z_dist']['dim'], 
+                        gmm_components_weight=gmm_components_weight, 
+                        gmm_mean=gmm_mean, 
+                        gmm_cov=gmm_cov, 
+                        device=device)
 else:
-    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean=None, cov=None, device=device)
+    raise NotImplementedError
 print('noise type: ', config['z_dist']['type'])
 
 

@@ -35,7 +35,8 @@ def main(method, prefix):
         aic_list = []
         best_aic = np.infty
         best_n_components = 0
-        for n_components in range(10,150,10):
+        '''
+        for n_components in range(1,11):
             model = mixture.GaussianMixture(n_components=n_components, covariance_type='full', verbose=2, verbose_interval=1)
             gm = model.fit(latent_vecs)
             aic = model.aic(latent_vecs)
@@ -45,6 +46,9 @@ def main(method, prefix):
                 best_aic = aic
                 best_n_components = n_components
         print("best num of components is ", best_n_components," aic is ", best_aic)
+        
+        '''
+        best_n_components = 102
         model = mixture.GaussianMixture(n_components=best_n_components, covariance_type='full', verbose=2, verbose_interval=1)
         gm = model.fit(latent_vecs)
         np.save(prefix+'/gmm_components_weights.npy', gm.weights_)
@@ -63,6 +67,6 @@ def main(method, prefix):
         plt.savefig(prefix + '/normal_test.png')
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/flowers_512dim_batchmode'
-    method = 'normal test'
+    prefix = 'output/vec2img/flowers_small_lr'
+    method = 'gauss mixture'
     main(method, prefix)
