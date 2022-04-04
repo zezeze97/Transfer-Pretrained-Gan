@@ -67,6 +67,6 @@ def main(method, prefix):
         plt.savefig(prefix + '/normal_test.png')
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/flowers_small_lr'
+    prefix = 'output/vec2img/lsun_kitchen_mini_train_batch_mode'
     method = 'gauss mixture'
     main(method, prefix)
