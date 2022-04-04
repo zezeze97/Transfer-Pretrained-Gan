@@ -16,19 +16,19 @@ discriminator:
     nfilter: 64
     embed_size: 1
 z_dist:
-  type: multivariate_normal
+  type: gmm
   dim: 256
-  mean_path: 'output/img2vec2img/lsun_kitchen_batch_mode/mean.npy'
-  cov_path: 'output/img2vec2img/lsun_kitchen_batch_mode/cov.npy'
+  gmm_components_weight: output/vec2img/lsun_kitchen_mini_train_batch_mode/gmm_components_weights.npy
+  gmm_mean: output/vec2img/lsun_kitchen_mini_train_batch_mode/gmm_mean.npy
+  gmm_cov: output/vec2img/lsun_kitchen_mini_train_batch_mode/gmm_cov.npy
 training:
   batch_size: 64
   pretrain_ckpt_file: ./pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
   finetune: true
-  out_dir: output/finetune/lsun_kitchen_multivariate_normal_batchmode
+  out_dir: output/finetune/lsun_kitchen_gmm_batchmode_vec2img_bs64
   inception_every: -1
   fid_every: 1000
-  fid_fake_imgs_num: 1000
-  backup_every: 1000
+  fid_fake_imgs_num: 50000
 test:
   model_file: 'model.pt'
   batch_size: 32 
@@ -36,7 +36,7 @@ test:
   sample_nrow: 8
   compute_inception: false
   compute_fid: true
-  fid_fake_imgs_num: 60000
+  fid_fake_imgs_num: 50000
 interpolations:
   nzs: 10
   nsubsteps: 75

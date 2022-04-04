@@ -45,10 +45,11 @@ args = parser.parse_args()
 config = load_config(args.config, 'configs/default.yaml')
 is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
-tmp_ckpt_file = config['training']['pretrain_ckpt_file'] 
-config['training']['pretrain_ckpt_file'] = os.path.join(
-        os.path.split(os.path.abspath(__file__))[0], tmp_ckpt_file) 
-print(config['training']['pretrain_ckpt_file']) 
+if config['training']['pretrain_ckpt_file'] is not None:
+    tmp_ckpt_file = config['training']['pretrain_ckpt_file'] 
+    config['training']['pretrain_ckpt_file'] = os.path.join(
+            os.path.split(os.path.abspath(__file__))[0], tmp_ckpt_file) 
+    print(config['training']['pretrain_ckpt_file']) 
 
 # Short hands
 batch_size = config['training']['batch_size']
@@ -64,7 +65,7 @@ out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
 change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
-
+max_epoch = config['training']['max_epoch']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -140,13 +141,28 @@ if config['z_dist']['type'] == 'multivariate_normal':
     cov_path = config['z_dist']['cov_path']
     mean = torch.FloatTensor(np.load(mean_path))
     cov = torch.FloatTensor(np.load(cov_path))
+# load gmm parameters if neccessary
+if config['z_dist']['type'] == 'gmm':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
+
 
 # Distributions
 ydist = get_ydist(nlabels, device=device)
-if config['z_dist']['type'] == 'multivariate_normal':
-    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean, cov, device=device)
+if config['z_dist']['type'] == 'gauss':
+    zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
+elif config['z_dist']['type'] == 'multivariate_normal':
+    zdist = get_zdist(dist_name=config['z_dist']['type'], dim=config['z_dist']['dim'], mean=mean, cov=cov, device=device)
+elif config['z_dist']['type'] == 'gmm':
+    zdist = get_zdist(dist_name=config['z_dist']['type'], 
+                        dim=config['z_dist']['dim'], 
+                        gmm_components_weight=gmm_components_weight, 
+                        gmm_mean=gmm_mean, 
+                        gmm_cov=gmm_cov, 
+                        device=device)
 else:
-    zdist = get_zdist(config['z_dist']['type'], config['z_dist']['dim'], mean=None, cov=None, device=device)
+    raise NotImplementedError
 print('noise type: ', config['z_dist']['type'])
 
 # Save for tests
@@ -248,7 +264,8 @@ for y_inst in range(sample_nlabels):
 
 # Training loop
 print('Start training...')
-while True:
+flag = True
+while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
 
@@ -332,3 +349,5 @@ while True:
 
             if (restart_every > 0 and t0 - tstart > restart_every):
                 exit(3)
+    if epoch_idx > max_epoch:
+        flag = False

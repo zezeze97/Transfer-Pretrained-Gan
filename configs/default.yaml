@@ -46,6 +46,7 @@ training:
   d_steps: 1
   equalize_lr: false
   model_file: model.pt
+  max_epoch: 140
 test:
   batch_size: 32
   sample_size: 64

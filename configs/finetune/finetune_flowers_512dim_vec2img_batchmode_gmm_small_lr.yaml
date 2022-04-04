@@ -7,11 +7,10 @@ data:
   img_size: 128
   nlabels: 1
 generator:
-  name: resnet2
+  name: resnet2_omit_class_embedding
   kwargs:
     nfilter: 64
     nfilter_max: 1024
-    embed_size: 256
 discriminator:
   name: resnet2
   kwargs:
@@ -19,22 +18,23 @@ discriminator:
     nfilter_max: 1024
     embed_size: 256
 z_dist:
-  type: multivariate_normal
-  dim: 256
-  mean_path: output/vec2img/flowers_small_lr/mean.npy
-  cov_path: output/vec2img/flowers_small_lr/cov.npy
+  type: gmm
+  dim: 512
+  gmm_components_weight: output/vec2img/flowers_512dim_batchmode/gmm_components_weights.npy
+  gmm_mean: output/vec2img/flowers_512dim_batchmode/gmm_mean.npy
+  gmm_cov: output/vec2img/flowers_512dim_batchmode/gmm_cov.npy
 training:
   batch_size: 32
   change_generator_embedding_layer: true
   change_discriminator_fc_layer: true
-  pretrain_ckpt_file: null
-  generator_pretrained_ckpt_file: output/vec2img/flowers_small_lr/chkpts/generator.pth
-  discriminator_pretrained_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  pretrain_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/flowers_256dim_shift
+  out_dir: output/finetune/flowers_512dim_vec2img_batchmode_gmm_small_lr
   inception_every: -1
   fid_every: 1000
   fid_fake_imgs_num: 8000
+  lr_g: 0.000025
+  lr_d: 0.000025
 test:
   model_file: 'model.pt'
   batch_size: 32 
