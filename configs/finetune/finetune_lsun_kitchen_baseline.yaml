@@ -31,6 +31,7 @@ training:
   fid_every: 1000
   fid_fake_imgs_num: 50000
   backup_every: 1000
+  max_epoch: 30
   nworkers: 6  # 16
 test:
   model_file: 'model.pt'
