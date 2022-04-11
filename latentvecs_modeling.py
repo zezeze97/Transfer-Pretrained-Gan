@@ -65,8 +65,16 @@ def main(method, prefix):
         plt.ylabel('P_value')
         plt.title('Normal Test for Latentvecs')
         plt.savefig(prefix + '/normal_test.png')
+    
+    if method == 'hist':
+        plt.hist(latent_vecs[:,15],bins=50)
+        plt.title("hist of latentvecs")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.savefig(prefix + '/hist.png')
+
 
 if __name__  == '__main__':
     prefix = 'output/vec2img/flowers_512dim_batchmode'
-    method = 'gauss mixture'
+    method = 'hist'
     main(method, prefix)

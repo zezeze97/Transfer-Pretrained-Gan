@@ -54,7 +54,7 @@ def load_latentvecs(latentvec_dir, num):
         else:
             current_vecs = np.load(latentvec_dir + filename)
             latent_vecs = np.concatenate((current_vecs,latent_vecs),axis=0)
-        total_num = latent_vecs.shape[0]
+    total_num = latent_vecs.shape[0]
     return latent_vecs[total_num-num:,:]
 
 # total_feat_in = []
@@ -156,8 +156,8 @@ def main(type):
         plt.legend()  # loc='upper left'
         plt.savefig('outputs/generate_results/kitchen_t-SNE.png')
     if type == 'latentvecs':
-        latentvec_dir = 'output/vec2img/lsun_kitchen_mini_train_batch_mode/latentvecs/'
-        num = 2000
+        latentvec_dir = 'output/vec2img/flowers_small_lr/latentvecs/'
+        num = 8000
         samples_flowers = load_latentvecs(latentvec_dir, num)  
         zdist = get_zdist('gauss', 256, mean= None, cov= None, device='cpu')
         samples_noraml = zdist.sample((num,)).numpy() 
@@ -172,13 +172,13 @@ def main(type):
         # plot_embedding(results, labels, 't-SNE embedding of images')
         
         normal_result = all_results[num:,:]
-        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='g', s=1, label='bedroom', alpha=0.3)
+        plt.scatter(x=normal_result[:, 0], y=normal_result[:, 1], c='g', s=1, label='imagenet', alpha=0.3)
         flowers_result = all_results[:num,:]
-        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='r', marker='x', s=1, label='kitchen', alpha=1)
+        plt.scatter(x=flowers_result[:, 0], y=flowers_result[:, 1], c='r', marker='x', s=1, label='flowers', alpha=1)
 
         plt.title('latentvecs_t-SNE')
         plt.legend()  # loc='upper left'
-        plt.savefig('output/vec2img/lsun_kitchen_mini_train_batch_mode/latentvecs_t-SNE.png')
+        plt.savefig('output/vec2img/flowers_small_lr/latentvecs_t-SNE.png')
 
 
     if type == 'latentvecs_only':
