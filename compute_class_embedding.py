@@ -11,6 +11,7 @@ import torchvision
 from tensorboardX import SummaryWriter
 import numpy as np
 import torchvision.models as models
+import cv2
 
 def remove_module_str_in_state_dict(state_dict):
     state_dict_rename = OrderedDict()
@@ -24,8 +25,10 @@ def remove_module_str_in_state_dict(state_dict):
 parser = argparse.ArgumentParser(
     description='Train a GAN with different regularization strategies.'
 )
-parser.add_argument('config', type=str, help='Path to config file.')
+parser.add_argument('--config', type=str, help='Path to config file.')
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
+parser.add_argument('--outdir', type=str, help='Path to save class_embedding.')
+parser.add_argument('--softlabel', action='store_true', help='use logitic.')
 args = parser.parse_args()
 
 config = load_config(args.config, default_path=None)
@@ -33,7 +36,7 @@ is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
 # Short hands
 batch_size = config['training']['batch_size']
-out_dir = config['training']['out_dir']
+out_dir = args.outdir
 class_embedding_dir = path.join(out_dir, 'class_embedding')
 
 # Create missing directories
@@ -51,8 +54,7 @@ train_dataset, nlabels = get_dataset(
     name=config['data']['type'],
     data_dir=config['data']['train_dir'],
     size=config['data']['img_size'],
-    lsun_categories=config['data']['lsun_categories_train'],
-    simple_transform=config['data']['simple_transform']
+    pretrained_transform=True
 )
 train_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -114,14 +116,31 @@ print('computing label embedding...')
 label_embedding = []
 for (x_real, y) in train_loader:
     with torch.no_grad():
-        label_embedding_dist = softmax(label_encoder(x_real.to(device)))
-        label_embedding.append(torch.mm(label_embedding_dist, label_embedding_layer_weights))
+        if args.softlabel:
+            label_embedding_dist = softmax(label_encoder(x_real.to(device)))
+            label_embedding.append(torch.mm(label_embedding_dist, label_embedding_layer_weights))
+        else:
+            label_index = torch.argmax(label_encoder(x_real.to(device)), dim=1)
+            print(label_index)
+            label_embedding.append(generator.embedding(label_index))
 label_embedding = torch.mean(torch.concat(label_embedding),dim=0).squeeze()
 print('finish computing label_embedding!!')
 
 # save label_embedding
-label_embedding = label_embedding.detach().cpu().numpy()
-np.save(out_dir + '/class_embedding/class_embedding.npy', label_embedding)
+label_embedding_np = label_embedding.detach().cpu().numpy()
+np.save(out_dir + '/class_embedding/class_embedding.npy', label_embedding_np)
+
+# visualize currrent label embedding
+zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
+
+z = zdist.sample((batch_size,))
+with torch.no_grad():         
+    y = torch.zeros((batch_size, label_dim)).to(device)
+    for i in range(batch_size):
+        y[i,:] = label_embedding
+    gen_images = generator(z, y)
+gen_images = torchvision.utils.make_grid(gen_images*0.5+0.5, nrow=8, padding=2)
+torchvision.utils.save_image(gen_images, path.join(class_embedding_dir,'gen_images.png'))
 
 
 

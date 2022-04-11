@@ -4,12 +4,20 @@ import torchvision.datasets as datasets
 import numpy as np
 
 
-def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform = False):
+def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform=False, pretrained_transform=False):
     if simple_transform:
         transform = transforms.Compose([
         transforms.Resize((size,size)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+    elif pretrained_transform:
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
         ])
     else:
         transform = transforms.Compose([
