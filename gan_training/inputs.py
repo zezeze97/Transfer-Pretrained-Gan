@@ -17,7 +17,7 @@ def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform=
             transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
-            normalize,
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
     else:
         transform = transforms.Compose([
