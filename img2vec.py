@@ -81,6 +81,20 @@ val_loader = torch.utils.data.DataLoader(
 )
 
 
+target_dataset, nlabels = get_dataset(
+    name=config['targetdata']['type'],
+    data_dir=config['targetdata']['train_dir'],
+    size=config['targetdata']['img_size'],
+    simple_transform=config['targetdata']['simple_transform']
+)
+target_loader = torch.utils.data.DataLoader(
+        target_dataset,
+        batch_size=batch_size,
+        num_workers=config['training']['nworkers'],
+        shuffle=False, pin_memory=True, sampler=None, drop_last=True
+)
+
+
 # Number of labels
 nlabels = config['data']['nlabels']
 
@@ -170,7 +184,7 @@ for epoch in range(total_epochs):
 
 # save latentvecs
 img2vec.eval()
-for index, (x_real, y) in enumerate(train_loader):
+for index, (x_real, y) in enumerate(target_loader):
     with torch.no_grad():
         z = img2vec(x_real.to(device))
     latentvecs = z.detach().cpu().numpy()

@@ -6,6 +6,13 @@ data:
   simple_transform: true
   img_size: 128
   nlabels: 1000
+targetdata:
+  type: image
+  train_dir: data/Flowers
+  test_dir: data/Flowers
+  simple_transform: true
+  img_size: 128
+  nlabels: 1000
 generator:
   name: resnet2
   kwargs:
