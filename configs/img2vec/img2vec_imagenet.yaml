@@ -31,11 +31,11 @@ training:
   load_from: null
   nworkers: 8
   batch_size: 64
-  total_epochs: 1000
+  total_epochs: 100
   lr: 0.0001
   pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   label_embedding: output/flowers/class_embedding/class_embedding.npy
-  save_per_epoch: 100
+  save_per_epoch: 10
   out_dir: output/img2vec/imagenet
   lr_scheduler:
     milestones_step: 500

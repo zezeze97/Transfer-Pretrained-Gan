@@ -1,10 +1,12 @@
 import argparse
+from email.mime import base
 import os
 from os import path
 import torch
 from torch import nn
 from gan_training.inputs import get_dataset
-from gan_training.config import load_config, build_im2latent
+from gan_training.config import load_config, build_im2latent, build_generator
+from gan_training.distributions import get_ydist, get_zdist
 from collections import OrderedDict
 import torchvision
 from tensorboardX import SummaryWriter
@@ -101,18 +103,16 @@ nlabels = config['data']['nlabels']
 
 # Create models
 img2vec = build_im2latent(config)
+generator = build_generator(config)
 print(img2vec)
+print(generator)
 
-if load_from is not None:
-    print('loading img2vec ckpt: ', load_from)
-    loaded_dict = torch.load(load_from)
-    img2vec.load_state_dict(loaded_dict)
-    print('img2vec ckpt loaded!')
+
 
 
 # Put models on gpu if needed
 img2vec = img2vec.to(device)
-
+generator = generator.to(device)
 
 
 # optimize and loss
@@ -124,6 +124,18 @@ criterion = nn.MSELoss()
 writer = SummaryWriter(logdir=out_dir+'/monitoring')
 
 
+if load_from is not None:
+    print('loading img2vec ckpt: ', load_from)
+    loaded_dict = torch.load(load_from)
+    img2vec.load_state_dict(loaded_dict)
+    print('img2vec ckpt loaded!')
+
+# Load generator ckpt
+pretrained_ckpt = config['training']['pretrain_ckpt_file']
+loaded_dict = torch.load(pretrained_ckpt)
+print('Loading pretrained generator...')
+generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
+print('Pretrained generator loaded!')
 
 
 
@@ -131,6 +143,8 @@ writer = SummaryWriter(logdir=out_dir+'/monitoring')
 milestones_step = config['training']['lr_scheduler']['milestones_step']
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=range(milestones_step,total_epochs,milestones_step), gamma=config['training']['lr_scheduler']['gamma'])
 
+# zdist 
+zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
 
 
 
@@ -139,6 +153,27 @@ print('Start training...')
 it = 0
 # set mode
 img2vec.train()
+generator.eval()
+
+# load label_embedding if needed
+if config['training']['label_embedding'] is not None:
+    print('loading label embedding...')
+    label_embedding = torch.FloatTensor(np.load(config['training']['label_embedding'])).to(device)
+    label_dim = config['generator']['kwargs']['embed_size']
+    print('finish loading label_embedding!!')
+
+# generate baseline image
+with torch.no_grad():
+    z = zdist.sample((batch_size,))
+    y = torch.zeros((batch_size, label_dim)).to(device)
+    for i in range(batch_size):
+        y[i,:] = label_embedding
+    baseline_images = generator(z, y)
+# draw baseline images
+baseline_images = torchvision.utils.make_grid(baseline_images*0.5+0.5, nrow=8, padding=2)
+writer.add_image('baseline_images', baseline_images, global_step = 0)
+
+
 for epoch in range(total_epochs):
     print('Start epoch %d...' % epoch)
 
@@ -179,6 +214,33 @@ for epoch in range(total_epochs):
         val_loss = np.mean(val_loss)
         writer.add_scalar('val loss', val_loss, epoch)
         print('[epoch %4d] val loss = %.4f'% (epoch, val_loss))
+
+        #===visualize current result====
+        # read a batch of data
+        x_real, y = next(iter(target_loader))
+        x_real, y = x_real.to(device), y.to(device)
+        y.clamp_(None, nlabels-1)
+
+        # draw gt images
+        gt_images = torchvision.utils.make_grid(x_real*0.5+0.5, nrow=8, padding=2)
+        writer.add_image('gt_images', gt_images, global_step = it+1)
+
+        # gt_image -> latentvecs -> generated image
+        img2vec.eval()
+        with torch.no_grad():
+            z = img2vec(x_real)
+            if nlabels > 1:
+                temp_bs = z.size(0)
+                
+                y = torch.zeros((temp_bs, label_dim)).to(device)
+                for i in range(temp_bs):
+                    y[i,:] = label_embedding
+
+            gen_images = generator(z, y)
+
+        # draw generated images
+        gen_images = torchvision.utils.make_grid(gen_images*0.5+0.5, nrow=8, padding=2)
+        writer.add_image('gen_images', gen_images, global_step = it+1)
         img2vec.train()
 
 
