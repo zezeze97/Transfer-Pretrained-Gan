@@ -101,11 +101,15 @@ latent_vecs_embedding_layer = latent_vecs_embedding_layer.to(device)
 
 # fix param in generator
 if omit_embedding_layer:
-    for k,v in generator.named_parameters():
-        if k =='embedding.weight':
-            v.requires_grad = True
-        else:
-            v.requires_grad = False
+    if config['training']['fix_class_embedding']:
+        for params in generator.parameters():
+            params.requires_grad = False
+    else:
+        for k,v in generator.named_parameters():
+            if k =='embedding.weight':
+                v.requires_grad = True
+            else:
+                v.requires_grad = False
         
 else:
     for params in generator.parameters():
@@ -114,7 +118,10 @@ else:
 
 # optimizer and loss
 if omit_embedding_layer:
-    optimizer = torch.optim.Adam(chain(latent_vecs_embedding_layer.parameters(),filter(lambda p: p.requires_grad, generator.parameters())), lr=lr, betas=(0.9, 0.999))
+    if config['training']['fix_class_embedding']:
+        optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
+    else:
+        optimizer = torch.optim.Adam(chain(latent_vecs_embedding_layer.parameters(),filter(lambda p: p.requires_grad, generator.parameters())), lr=lr, betas=(0.9, 0.999))
 else:
     optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
 criterion = nn.MSELoss()
@@ -165,10 +172,11 @@ for epoch in range(epochs):
     latent_vecs_embedding_layer.train()
     if omit_embedding_layer:
         generator.eval()
-        try:
-            generator.embedding.train()
-        except AttributeError as e:
-            print(e)
+        if not config['training']['fix_class_embedding']:
+            try:
+                generator.embedding.train()
+            except AttributeError as e:
+                print(e)
     else:
         generator.eval()
 
@@ -263,7 +271,7 @@ for index, (x_real, y) in enumerate(train_loader):
     latentvecs = z.detach().cpu().numpy()
     np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 
-# Save current generator if embedding layer is trainable
+# Save current generator if embedding layer is change
 if omit_embedding_layer:
     torch.save(generator.state_dict(), out_dir + '/chkpts/generator.pth')
         
