@@ -133,6 +133,12 @@ if omit_embedding_layer:
     pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
     generator_state_dict = generator.state_dict()
     new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    if config['training']['class_embedding'] is not None:
+        print('using special class embedding init!')
+        class_embedding = torch.FloatTensor(np.load(config['training']['class_embedding']))
+        # (256,) -> (1,256)
+        class_embedding = torch.unsqueeze(class_embedding, dim=0)
+        new_dict['embedding.weight'] = class_embedding
     generator_state_dict.update(new_dict)
     generator.load_state_dict(generator_state_dict)
 else:
