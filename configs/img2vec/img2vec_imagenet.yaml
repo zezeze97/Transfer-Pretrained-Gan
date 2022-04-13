@@ -12,7 +12,7 @@ targetdata:
   test_dir: data/Flowers
   simple_transform: true
   img_size: 128
-  nlabels: 1000
+  nlabels: 1
 generator:
   name: resnet2
   kwargs:
