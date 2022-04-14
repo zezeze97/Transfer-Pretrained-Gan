@@ -83,12 +83,12 @@ class Generator(nn.Module):
 
 
 class Generator_Omit_ClassEmbedding(nn.Module):
-    def __init__(self, z_dim, nlabels, size, nfilter=64, **kwargs):
+    def __init__(self, z_dim, nlabels, size, nfilter=64, split=True, **kwargs):
         super().__init__()
         s0 = self.s0 = size // 32
         nf = self.nf = nfilter
         self.z_dim = z_dim
-
+        self.split = split
         # Submodules
         self.fc = nn.Linear(z_dim, 16*nf*s0*s0)
 
@@ -115,14 +115,16 @@ class Generator_Omit_ClassEmbedding(nn.Module):
     def forward(self, z, y):
         assert(z.size(0) == y.size(0))
         batch_size = z.size(0)
+        if self.split:
+            z_dim = int(z.size(1))
+            fake_yembed = z[:,z_dim//2:]
 
-        z_dim = int(z.size(1))
-        fake_yembed = z[:,z_dim//2:]
+            fake_yembed = fake_yembed / torch.norm(fake_yembed, p=2, dim=1, keepdim=True)
 
-        fake_yembed = fake_yembed / torch.norm(fake_yembed, p=2, dim=1, keepdim=True)
-
-        yz = torch.cat([z[:,:z_dim//2], fake_yembed], dim=1)
-        out = self.fc(yz)
+            yz = torch.cat([z[:,:z_dim//2], fake_yembed], dim=1)
+            out = self.fc(yz)
+        else:
+            out = self.fc(z)
         out = out.view(batch_size, 16*self.nf, self.s0, self.s0)
 
         out = self.resnet_0_0(out)
