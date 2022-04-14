@@ -71,7 +71,7 @@ train_loader = torch.utils.data.DataLoader(
 
 
 # Number of labels
-nlabels = config['data']['nlabels']
+config['data']['nlabels'] = 1000
 
 
 # Create models
