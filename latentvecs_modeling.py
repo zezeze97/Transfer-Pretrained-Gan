@@ -75,6 +75,6 @@ def main(method, prefix):
 
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/flowers_512dim_batchmode'
-    method = 'hist'
+    prefix = 'output/vec2img/flowers_256dim_special_init'
+    method = 'gauss mixture'
     main(method, prefix)
