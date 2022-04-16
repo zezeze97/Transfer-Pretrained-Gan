@@ -19,6 +19,7 @@ z_dist:
 training:
   change_generator_embedding_layer: false
   change_discriminator_fc_layer: false
+  change_generator_fc_layer: false
   finetune: false
   out_dir: output/default
   gan_type: standard

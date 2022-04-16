@@ -139,7 +139,12 @@ if omit_embedding_layer:
     print('omit embedding_layer of generator!')
     pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
     generator_state_dict = generator.state_dict()
-    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    if config['z_dist'] in [256,512]:
+        new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    else:
+        print('change fc layer in generator since z_dist not in [256, 512]')
+        new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k not in  ['embedding.weight','fc.weight','fc.bias']}
+
     if config['training']['class_embedding'] is not None:
         print('using special class embedding init!')
         class_embedding = torch.FloatTensor(np.load(config['training']['class_embedding']))

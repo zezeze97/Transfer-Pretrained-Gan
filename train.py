@@ -197,7 +197,10 @@ if finetune_mode:
             # load pretrained generator
             pretrained_generator_loaded_dict = torch.load(config['training']['pretrain_ckpt_file'])['generator']
             generator_state_dict = generator.state_dict()
-            new_dict = {k: v for k, v in pretrained_generator_loaded_dict.items() if k != 'module.embedding.weight'}
+            if config['training']['change_generator_fc_layer']:
+                new_dict = {k: v for k, v in pretrained_generator_loaded_dict.items() if k not in ['module.embedding.weight','module.fc.weight', 'module.fc.bias']}
+            else:
+                new_dict = {k: v for k, v in pretrained_generator_loaded_dict.items() if k != 'module.embedding.weight'}
             if config['training']['special_class_embedding'] is not None:
                 print('using special class embedding!')
                 class_embedding = torch.FloatTensor(np.load(config['training']['special_class_embedding']))
