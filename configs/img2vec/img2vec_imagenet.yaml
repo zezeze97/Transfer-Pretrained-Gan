@@ -1,0 +1,42 @@
+data:
+  type: imagenet fake data
+  train_dir: data/imagenet_fake_data/image/train
+  val_dir: data/imagenet_fake_data/image/val
+  label_path: data/imagenet_fake_data/latentvecs.npy
+  simple_transform: true
+  img_size: 128
+  nlabels: 1000
+targetdata:
+  type: image
+  train_dir: data/Flowers
+  test_dir: data/Flowers
+  simple_transform: true
+  img_size: 128
+  nlabels: 1
+generator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+im2latent:
+  name: resnet3
+  kwargs:
+    nfilter: 64
+    embed_size: 1
+z_dist:
+  type: gauss
+  dim: 256
+training:
+  load_from: null
+  nworkers: 8
+  batch_size: 64
+  total_epochs: 100
+  lr: 0.0001
+  pretrain_ckpt_file: /home/zhangzr/GAN_stability/pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  label_embedding: output/flowers/class_embedding/class_embedding.npy
+  save_per_epoch: 10
+  out_dir: output/img2vec/imagenet
+  lr_scheduler:
+    milestones_step: 500
+    gamma: 0.1

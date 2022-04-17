@@ -244,7 +244,7 @@ for epoch in range(epochs):
 img2vec.eval()
 for index, (x_real, y) in enumerate(train_loader):
     with torch.no_grad():
-        z = img2vec(x_real)
+        z = img2vec(x_real.to(device))
     latentvecs = z.detach().cpu().numpy()
     np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 

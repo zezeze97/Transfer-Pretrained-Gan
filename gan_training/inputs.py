@@ -2,14 +2,22 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import numpy as np
+from gan_training.fake_data_datasets import FakeData
 
-
-def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform = False):
+def get_dataset(name, data_dir, label_path=None, size=64, lsun_categories=None, simple_transform=False, pretrained_transform=False):
     if simple_transform:
         transform = transforms.Compose([
         transforms.Resize((size,size)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+    elif pretrained_transform:
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
     else:
         transform = transforms.Compose([
@@ -41,6 +49,9 @@ def get_dataset(name, data_dir, size=64, lsun_categories=None, simple_transform 
         dataset = datasets.LSUNClass(data_dir, transform,
                                      target_transform=(lambda t: 0))
         nlabels = 1
+    elif name == 'imagenet fake data':
+        dataset = FakeData(img_path=data_dir, label_path=label_path, transform=transform)
+        nlabels = 1000
     else:
         raise NotImplemented
 

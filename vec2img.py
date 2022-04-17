@@ -101,11 +101,15 @@ latent_vecs_embedding_layer = latent_vecs_embedding_layer.to(device)
 
 # fix param in generator
 if omit_embedding_layer:
-    for k,v in generator.named_parameters():
-        if k =='embedding.weight':
-            v.requires_grad = True
-        else:
-            v.requires_grad = False
+    if config['training']['fix_class_embedding']:
+        for params in generator.parameters():
+            params.requires_grad = False
+    else:
+        for k,v in generator.named_parameters():
+            if k =='embedding.weight':
+                v.requires_grad = True
+            else:
+                v.requires_grad = False
         
 else:
     for params in generator.parameters():
@@ -114,7 +118,10 @@ else:
 
 # optimizer and loss
 if omit_embedding_layer:
-    optimizer = torch.optim.Adam(chain(latent_vecs_embedding_layer.parameters(),filter(lambda p: p.requires_grad, generator.parameters())), lr=lr, betas=(0.9, 0.999))
+    if config['training']['fix_class_embedding']:
+        optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
+    else:
+        optimizer = torch.optim.Adam(chain(latent_vecs_embedding_layer.parameters(),filter(lambda p: p.requires_grad, generator.parameters())), lr=lr, betas=(0.9, 0.999))
 else:
     optimizer = torch.optim.Adam(latent_vecs_embedding_layer.parameters(), lr=lr, betas=(0.9, 0.999))
 criterion = nn.MSELoss()
@@ -132,7 +139,18 @@ if omit_embedding_layer:
     print('omit embedding_layer of generator!')
     pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
     generator_state_dict = generator.state_dict()
-    new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    if config['z_dist'] in [256,512]:
+        new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
+    else:
+        print('change fc layer in generator since z_dist not in [256, 512]')
+        new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k not in  ['embedding.weight','fc.weight','fc.bias']}
+
+    if config['training']['class_embedding'] is not None:
+        print('using special class embedding init!')
+        class_embedding = torch.FloatTensor(np.load(config['training']['class_embedding']))
+        # (256,) -> (1,256)
+        class_embedding = torch.unsqueeze(class_embedding, dim=0)
+        new_dict['embedding.weight'] = class_embedding
     generator_state_dict.update(new_dict)
     generator.load_state_dict(generator_state_dict)
 else:
@@ -159,10 +177,11 @@ for epoch in range(epochs):
     latent_vecs_embedding_layer.train()
     if omit_embedding_layer:
         generator.eval()
-        try:
-            generator.embedding.train()
-        except AttributeError as e:
-            print(e)
+        if not config['training']['fix_class_embedding']:
+            try:
+                generator.embedding.train()
+            except AttributeError as e:
+                print(e)
     else:
         generator.eval()
 
@@ -257,7 +276,7 @@ for index, (x_real, y) in enumerate(train_loader):
     latentvecs = z.detach().cpu().numpy()
     np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 
-# Save current generator if embedding layer is trainable
+# Save current generator if embedding layer is change
 if omit_embedding_layer:
     torch.save(generator.state_dict(), out_dir + '/chkpts/generator.pth')
         
