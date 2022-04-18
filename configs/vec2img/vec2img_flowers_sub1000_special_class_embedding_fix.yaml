@@ -29,9 +29,9 @@ training:
   pretrain_ckpt_file: pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   omit_embedding_layer: true
   class_embedding: output/flowers_sub1000/class_embedding/class_embedding.npy
-  fix_class_embedding: False
+  fix_class_embedding: true
   save_per_epoch: 100
-  out_dir: output/vec2img/flowers_sub1000_256dim_special_init
+  out_dir: output/vec2img/flowers_sub1000_256dim_special_init_fix
   lr_scheduler:
     milestones_step: 1500
     gamma: 0.1
