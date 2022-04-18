@@ -100,20 +100,28 @@ latent_vecs_embedding_layer = latent_vecs_embedding_layer.to(device)
 
 
 # fix param in generator
-if omit_embedding_layer:
-    if config['training']['fix_class_embedding']:
+if config['z_dist']['dim'] in [256,512]:
+    if omit_embedding_layer:
+        if config['training']['fix_class_embedding']:
+            for params in generator.parameters():
+                params.requires_grad = False
+        else:
+            for k,v in generator.named_parameters():
+                if k =='embedding.weight':
+                    v.requires_grad = True
+                else:
+                    v.requires_grad = False
+            
+    else:
         for params in generator.parameters():
             params.requires_grad = False
-    else:
-        for k,v in generator.named_parameters():
-            if k =='embedding.weight':
-                v.requires_grad = True
-            else:
-                v.requires_grad = False
-        
 else:
-    for params in generator.parameters():
-        params.requires_grad = False
+    print('set fc layer learnable since z_dim is not 256 or 512')
+    for k,v in generator.named_parameters():
+        if k in ['fc.weight', 'fc.bias']:
+            v.requires_grad = True
+        else:
+            v.requires_grad = False
 
 
 # optimizer and loss
@@ -179,7 +187,14 @@ for epoch in range(epochs):
         generator.eval()
         if not config['training']['fix_class_embedding']:
             try:
+                print('setting generator embedding layer trainabel')
                 generator.embedding.train()
+            except AttributeError as e:
+                print(e)
+        if config['z_dist']['dim'] not in [256,512]:
+            try:
+                print('setting generator fc layer trainable')
+                generator.fc.train()
             except AttributeError as e:
                 print(e)
     else:
@@ -276,8 +291,9 @@ for index, (x_real, y) in enumerate(train_loader):
     latentvecs = z.detach().cpu().numpy()
     np.save(out_dir + '/latentvecs/batch_'+ str(index+1)+'_latentvecs.npy', latentvecs)
 
-# Save current generator if embedding layer is change
+# Save current generator if embedding layer or fc is change
 if omit_embedding_layer:
     torch.save(generator.state_dict(), out_dir + '/chkpts/generator.pth')
-        
-    
+      
+if config['z_dist']['dim'] not in [256,512]:
+    torch.save(generator.state_dict(), out_dir + '/chkpts/generator.pth')
