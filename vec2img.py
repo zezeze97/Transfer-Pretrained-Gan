@@ -139,7 +139,7 @@ if omit_embedding_layer:
     print('omit embedding_layer of generator!')
     pretrained_generator_state_dict = remove_module_str_in_state_dict(loaded_dict['generator'])
     generator_state_dict = generator.state_dict()
-    if config['z_dist'] in [256,512]:
+    if config['z_dist']['dim'] in [256,512]:
         new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
     else:
         print('change fc layer in generator since z_dist not in [256, 512]')
