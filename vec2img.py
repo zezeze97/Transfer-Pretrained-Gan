@@ -142,7 +142,7 @@ if omit_embedding_layer:
     if config['z_dist']['dim'] in [256,512]:
         new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k != 'embedding.weight'}
     else:
-        print('change fc layer in generator since z_dist not in [256, 512]')
+        print('change fc layer in generator since z_dist dim not in [256, 512]')
         new_dict = {k: v for k, v in pretrained_generator_state_dict.items() if k not in  ['embedding.weight','fc.weight','fc.bias']}
 
     if config['training']['class_embedding'] is not None:
