@@ -139,6 +139,53 @@ def build_optimizers(generator, discriminator, config):
     return g_optimizer, d_optimizer
 
 
+def build_optimizers_autoshift(generator, discriminator, autoshift, config):
+    optimizer = config['training']['optimizer']
+    lr_g = config['training']['lr_g']
+    lr_d = config['training']['lr_d']
+    lr_d = config['training']['lr_s']
+    equalize_lr = config['training']['equalize_lr']
+
+    toggle_grad(generator, True)
+    toggle_grad(discriminator, True)
+    toggle_grad(autoshift, True)
+
+    if equalize_lr:
+        g_gradient_scales = getattr(generator, 'gradient_scales', dict())
+        d_gradient_scales = getattr(discriminator, 'gradient_scales', dict())
+        s_gradient_scales = getattr(autoshift, 'gradient_scales', dict())
+
+        g_params = get_parameter_groups(generator.parameters(),
+                                        g_gradient_scales,
+                                        base_lr=lr_g)
+        d_params = get_parameter_groups(discriminator.parameters(),
+                                        d_gradient_scales,
+                                        base_lr=lr_d)
+        s_params = get_parameter_groups(autoshift.parameters(),
+                                        s_gradient_scales,
+                                        base_lr=lr_s)
+    else:
+        g_params = generator.parameters()
+        d_params = discriminator.parameters()
+        s_params = autoshift.parameters()
+
+    # Optimizers
+    if optimizer == 'rmsprop':
+        g_optimizer = optim.RMSprop(g_params, lr=lr_g, alpha=0.99, eps=1e-8)
+        d_optimizer = optim.RMSprop(d_params, lr=lr_d, alpha=0.99, eps=1e-8)
+        s_optimizer = optim.RMSprop(s_params, lr=lr_d, alpha=0.99, eps=1e-8)
+    elif optimizer == 'adam':
+        g_optimizer = optim.Adam(g_params, lr=lr_g, betas=(0., 0.99), eps=1e-8)
+        d_optimizer = optim.Adam(d_params, lr=lr_d, betas=(0., 0.99), eps=1e-8)
+        s_optimizer = optim.Adam(s_params, lr=lr_d, betas=(0., 0.99), eps=1e-8)
+    elif optimizer == 'sgd':
+        g_optimizer = optim.SGD(g_params, lr=lr_g, momentum=0.)
+        d_optimizer = optim.SGD(d_params, lr=lr_d, momentum=0.)
+        s_optimizer = optim.SGD(s_params, lr=lr_d, momentum=0.)
+
+    return g_optimizer, d_optimizer, s_optimizer
+
+
 def build_lr_scheduler(optimizer, config, last_epoch=-1):
     lr_scheduler = optim.lr_scheduler.StepLR(
         optimizer,

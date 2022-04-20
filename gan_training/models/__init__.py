@@ -1,6 +1,7 @@
 from gan_training.models import (
     resnet, resnet2, resnet3, resnet4,
 )
+# from vanilla_vae import VanillaVAE
 
 generator_dict = {
     'resnet': resnet.Generator,

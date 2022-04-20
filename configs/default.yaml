@@ -49,6 +49,7 @@ training:
   model_file: model.pt
   max_epoch: 70
   special_class_embedding: null
+  lr_a: 0.0001
 test:
   batch_size: 32
   sample_size: 64

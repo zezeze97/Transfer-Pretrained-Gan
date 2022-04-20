@@ -78,3 +78,89 @@ class Evaluator(object):
         with torch.no_grad():
             x = self.generator(z, y)
         return x
+
+
+class Evaluator_autoshift(object):
+    def __init__(self, generator, autoshift, eval_loader, ydist, batch_size=64,
+                 inception_nsamples=60000, device=None):
+        self.autoshift = autoshift
+        self.generator = generator
+        # self.zdist = zdist
+        self.eval_loader = eval_loader
+        self.ydist = ydist
+        self.inception_nsamples = inception_nsamples
+        self.batch_size = batch_size
+        self.device = device
+
+    def compute_inception_score(self):
+        #! TO DO: modify as fid 
+        self.generator.eval()
+        imgs = []
+        while(len(imgs) < self.inception_nsamples):
+            ztest = self.zdist.sample((self.batch_size,))
+            ytest = self.ydist.sample((self.batch_size,))
+
+            samples = self.generator(ztest, ytest)
+            samples = [s.data.cpu().numpy() for s in samples]
+            imgs.extend(samples)
+
+        imgs = imgs[:self.inception_nsamples]
+        score, score_std = inception_score(
+            imgs, device=self.device, resize=True, splits=10
+        )
+
+        return score, score_std
+
+    def compute_fid_score(self, generated_img_path, gt_path, img_size):
+        paths = [generated_img_path, gt_path]
+        fid = calculate_fid_given_paths(paths, batch_size=self.batch_size, img_size=img_size, device=self.device, dims=2048, num_workers=1)
+        return fid
+
+    def save_samples(self, sample_num, save_dir):
+        self.autoshift.eval()
+        self.generator.eval()
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        num_of_img = 0
+        flag = True
+        while flag:
+            # z = self.zdist.sample((self.batch_size,))
+            x_real, _ = next(iter(self.eval_loader))
+            x_real = x_real.to(self.device)
+            y = self.ydist.sample((self.batch_size,))
+            with torch.no_grad():
+                z = self.autoshift(x_real)[0]
+                x = self.generator(z, y)
+            imgs = x.detach().cpu().numpy()
+            imgs = imgs * 0.5 + 0.5
+            imgs = np.uint8(imgs * 255)
+            for img in imgs:
+                img = cv2.cvtColor(np.transpose(img, (1, 2, 0)), cv2.COLOR_RGB2BGR)  # for saving using cv2.imwrite
+                num_of_img += 1
+                cv2.imwrite(os.path.join(save_dir, '%08d.png' % num_of_img), img)
+                if num_of_img % 1000 == 0:
+                    print('Generated ', num_of_img, ' images')
+                if num_of_img >= sample_num:
+                    flag = False
+                    break
+        
+
+    def create_samples(self, y=None, batch_size=64):
+        self.autoshift.eval()
+        self.generator.eval()
+        batch_size = batch_size
+        # batch_size = z.size(0)
+        # Parse y
+        if y is None:
+            y = self.ydist.sample((batch_size,))
+        elif isinstance(y, int):
+            y = torch.full((batch_size,), y,
+                           device=self.device, dtype=torch.int64)
+        # Sample x
+        x_real, _ = next(iter(self.eval_loader))
+        x_real = x_real.to(self.device)
+        with torch.no_grad():
+            z = self.autoshift(x_real)[0]
+            x = self.generator(z, y)
+        return x
