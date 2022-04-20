@@ -274,6 +274,7 @@ for y_inst in range(sample_nlabels):
 # Training loop
 print('Start training...')
 flag = True
+best_fid = np.infty
 while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
@@ -342,6 +343,9 @@ while flag:
                                                 gt_path = config['data']['train_dir'] + '/0/', 
                                                 img_size = fid_img_size)
             logger.add('fid', 'score', fid, it=it)
+            if fid < best_fid:
+                checkpoint_io.save('model_best.pt' , it=it)
+                best_fid = fid
 
         # (iii) Backup if necessary
         if ((it + 1) % backup_every) == 0:
