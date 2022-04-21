@@ -27,7 +27,7 @@ training:
   lr: 0.005
   pretrain_ckpt_file: pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   omit_embedding_layer: true
-  class_embedding: output/cars/class_embedding/class_embedding.npy
+  class_embedding: output/pets/class_embedding/class_embedding.npy
   fix_class_embedding: True
   save_per_epoch: 100
   out_dir: output/vec2img/pets_256dim_special_init_fix
