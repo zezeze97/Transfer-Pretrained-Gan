@@ -49,6 +49,10 @@ training:
   model_file: model.pt
   max_epoch: 70
   special_class_embedding: null
+  frozen_generator: false
+  frozen_discriminator: false
+  frozen_generator_param_list: null
+  frozen_discriminator_param_list: null
 test:
   batch_size: 32
   sample_size: 64

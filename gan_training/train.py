@@ -8,7 +8,8 @@ from torch import autograd
 
 class Trainer(object):
     def __init__(self, generator, discriminator, g_optimizer, d_optimizer,
-                 gan_type, reg_type, reg_param):
+                 gan_type, reg_type, reg_param, frozen_generator=False, frozen_discriminator=False, 
+                 frozen_generator_param_list=None, frozen_discriminator_param_list=None):
         self.generator = generator
         self.discriminator = discriminator
         self.g_optimizer = g_optimizer
@@ -17,10 +18,16 @@ class Trainer(object):
         self.gan_type = gan_type
         self.reg_type = reg_type
         self.reg_param = reg_param
+        self.frozen_generator = frozen_generator
+        self.frozen_discriminator = frozen_discriminator
+        self.frozen_generator_param_list = frozen_generator_param_list
+        self.frozen_discriminator_param_list = frozen_discriminator_param_list
 
     def generator_trainstep(self, y, z):
         assert(y.size(0) == z.size(0))
         toggle_grad(self.generator, True)
+        if self.frozen_generator:
+            toggle_grad(self.generator, False, parameters_list=self.frozen_generator_param_list)
         toggle_grad(self.discriminator, False)
         self.generator.train()
         self.discriminator.train()
@@ -38,6 +45,8 @@ class Trainer(object):
     def discriminator_trainstep(self, x_real, y, z):
         toggle_grad(self.generator, False)
         toggle_grad(self.discriminator, True)
+        if self.frozen_discriminator:
+            toggle_grad(self.discriminator, False, parameters_list=self.frozen_discriminator_param_list)
         self.generator.train()
         self.discriminator.train()
         self.d_optimizer.zero_grad()
@@ -115,9 +124,15 @@ class Trainer(object):
 
 
 # Utility functions
-def toggle_grad(model, requires_grad):
-    for p in model.parameters():
-        p.requires_grad_(requires_grad)
+def toggle_grad(model, requires_grad, parameters_list=None):
+    if parameters_list is None:
+        for p in model.parameters():
+            p.requires_grad_(requires_grad)
+    else:
+        for k,v in model.named_parameters():
+            if k in parameters_list:
+                v.requires_grad_(requires_grad)
+            
 
 
 def compute_grad2(d_out, x_in):

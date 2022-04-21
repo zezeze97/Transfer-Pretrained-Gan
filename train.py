@@ -259,7 +259,11 @@ trainer = Trainer(
     generator, discriminator, g_optimizer, d_optimizer,
     gan_type=config['training']['gan_type'],
     reg_type=config['training']['reg_type'],
-    reg_param=config['training']['reg_param']
+    reg_param=config['training']['reg_param'],
+    frozen_generator=config['training']['frozen_generator'],
+    frozen_discriminator=config['training']['frozen_discriminator'],
+    frozen_generator_param_list=config['training']['frozen_generator_param_list'],
+    frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list']
 )
 
 # sample before training
