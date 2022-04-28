@@ -24,6 +24,9 @@ from gan_training.models.vanilla_vae import VanillaVAE
 # Global variable
 dist_reg = False  # True
 kld_weight = 0  # 0.00025
+# Save mu and var of the latest N batch to calculate average.
+n_save_batch = 256  # 256 * 32 = 8192, 32 as batch, 8192 is the number of flowers
+feed_whole_data = n_save_batch is None
 
 def remove_module_str_in_state_dict(state_dict):
     state_dict_rename = OrderedDict()
@@ -341,6 +344,11 @@ while flag:
                 gloss, kld_loss = trainer.generator_trainstep(x_real, y, dist_reg=True, kld_weight=kld_weight)
                 logger.add('losses', 'generator', gloss, it=it)
                 logger.add('losses', 'dist_reg', kld_loss, it=it)
+            elif n_save_batch is not None:
+                batch_id = it % n_save_batch
+                save_dir = os.path.join(out_dir, 'dist_params')
+                gloss = trainer.generator_trainstep(x_real, y, save_dir=save_dir, batch_id=batch_id)
+                logger.add('losses', 'generator', gloss, it=it)
             else:
                 gloss = trainer.generator_trainstep(x_real, y)
                 logger.add('losses', 'generator', gloss, it=it)
@@ -384,7 +392,7 @@ while flag:
             # generate and save fake images
             print('Generating fake images to compute fid...')
             fid_fake_image_save_dir = os.path.join(out_dir, 'imgs', 'fid_fake_imgs')
-            evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
+            evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, feed_whole_data=feed_whole_data)
             print('Computiong fid...')
             fid_img_size = (config['data']['img_size'], config['data']['img_size'])
             fid = evaluator.compute_fid_score(generated_img_path=fid_fake_image_save_dir,

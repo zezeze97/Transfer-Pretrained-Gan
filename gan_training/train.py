@@ -4,7 +4,8 @@ from torch.nn import functional as F
 import torch.utils.data
 import torch.utils.data.distributed
 from torch import autograd
-
+import os
+import numpy as np
 
 class Trainer(object):
     def __init__(self, generator, discriminator, g_optimizer, d_optimizer,
@@ -128,7 +129,10 @@ class Trainer_autoshift(object):
         self.reg_type = reg_type
         self.reg_param = reg_param
 
-    def generator_trainstep(self, x_real, y, z=None):
+    def generator_trainstep(self, x_real, y, z=None, dist_reg=False, kld_weight=0, save_dir=None, batch_id=None):
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+    
         # assert(y.size(0) == z.size(0))
         toggle_grad(self.autoshift, True)
         toggle_grad(self.generator, True)
@@ -139,16 +143,33 @@ class Trainer_autoshift(object):
         self.s_optimizer.zero_grad()
         self.g_optimizer.zero_grad()
         
-        z = self.autoshift(x_real)[0]
+        # z = self.autoshift(x_real)[0]
+        z, inp, mu, log_var = self.autoshift(x_real)
+        if save_dir:
+            assert batch_id is not None 
+            avg_mu = mu.detach().mean(dim=0)
+            std = torch.exp(0.5 * log_var)
+            avg_std = std.detach().mean(dim=0)
+            np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_mean.npy'), avg_mu.cpu().numpy())
+            np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_std.npy'), avg_std.cpu().numpy())
+        
         x_fake = self.generator(z, y)
         d_fake = self.discriminator(x_fake, y)
         gloss = self.compute_loss(d_fake, 1)
+        gloss_value = gloss.item()
+        
+        if dist_reg:
+            kld_loss = kld_weight * self.autoshift.module.loss_function(mu, log_var)
+            gloss += kld_loss
         gloss.backward()
 
         self.g_optimizer.step()
         self.s_optimizer.step()
 
-        return gloss.item()
+        if dist_reg:
+            return gloss_value, kld_loss.item()
+        else:
+            return gloss.item()
 
     def discriminator_trainstep(self, x_real, y, z=None):
         toggle_grad(self.autoshift, False)
