@@ -145,13 +145,15 @@ class Trainer_autoshift(object):
         
         # z = self.autoshift(x_real)[0]
         z, inp, mu, log_var = self.autoshift(x_real)
-        if save_dir:
+        if save_dir is not None:
             assert batch_id is not None 
             avg_mu = mu.detach().mean(dim=0)
-            std = torch.exp(0.5 * log_var)
-            avg_std = std.detach().mean(dim=0)
+            avg_log_var = log_var.detach().mean(dim=0)
+            # std = torch.exp(0.5 * log_var)
+            # avg_std = std.detach().mean(dim=0)
             np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_mean.npy'), avg_mu.cpu().numpy())
-            np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_std.npy'), avg_std.cpu().numpy())
+            np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_log_var.npy'), avg_log_var.cpu().numpy())
+            # np.save(os.path.join(save_dir, 'batch_'+str(batch_id)+'_std.npy'), avg_std.cpu().numpy())
         
         x_fake = self.generator(z, y)
         d_fake = self.discriminator(x_fake, y)

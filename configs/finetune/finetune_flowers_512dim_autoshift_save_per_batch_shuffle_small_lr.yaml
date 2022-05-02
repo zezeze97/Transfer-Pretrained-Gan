@@ -26,7 +26,7 @@ training:
   change_discriminator_fc_layer: true
   pretrain_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/flowers_512dim_autoshift_save_per_batch_shuffle_small_lr
+  out_dir: output/finetune/flowers_512dim_autoshift_save_per_batch_shuffle_small_lr_new
   inception_every: -1
   sample_every: 1000
   fid_every: 1000

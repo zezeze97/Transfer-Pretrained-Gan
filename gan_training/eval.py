@@ -221,35 +221,44 @@ class Evaluator_autoshift_save(object):
         # Go through the whole dataset to calculate the average mean and std.
         print('Calculate mean and std of VAE encoder...')
         if feed_whole_data:
-            # avg_mu, avg_var = torch.zeros(latent_dim), torch.zeros(latent_dim)
-            # avg_mu, avg_var = avg_mu.to(self.device), avg_var.to(self.device)
-            avg_mu, avg_std = torch.zeros(latent_dim), torch.zeros(latent_dim)
-            avg_mu, avg_std = avg_mu.to(self.device), avg_var.to(self.device)
+            # === Average log_var.
+            avg_mu, avg_var = torch.zeros(latent_dim), torch.zeros(latent_dim)
+            avg_mu, avg_var = avg_mu.to(self.device), avg_var.to(self.device)
             for i, (x_real, _) in enumerate(self.eval_loader):
                 x_real = x_real.to(self.device)
                 with torch.no_grad():
-                    # mu, var = self.autoshift.encode(x_real)
                     mu, var = self.autoshift.module.encode(x_real)  # use .module since DataParallel 
-                    # mu, var = mu.mean(dim=0), var.mean(dim=0)
-                    mu = mu.mean(dim=0)
-                    std = torch.exp(0.5 * var)
-                    std = std.mean(dim=0)
+                    mu, var = mu.mean(dim=0), var.mean(dim=0)
                 avg_mu = (avg_mu * i + mu) / (i+1)    
-                # avg_var = (avg_var * i + var) / (i+1)
-                avg_std = (avg_std * i + std) / (i+1)
-            # avg_std = torch.exp(0.5 * avg_var)
+                avg_var = (avg_var * i + var) / (i+1)
+            avg_std = torch.exp(0.5 * avg_var)
+            
+            # === Average std, it seems not work well.
+            # avg_mu, avg_std = torch.zeros(latent_dim), torch.zeros(latent_dim)
+            # avg_mu, avg_std = avg_mu.to(self.device), avg_std.to(self.device)
+            # for i, (x_real, _) in enumerate(self.eval_loader):
+                # x_real = x_real.to(self.device)
+                # with torch.no_grad():
+                    # mu, var = self.autoshift.module.encode(x_real)  # use .module since DataParallel 
+                    # mu = mu.mean(dim=0)
+                    # std = torch.exp(0.5 * var)
+                    # std = std.mean(dim=0)
+                # avg_mu = (avg_mu * i + mu) / (i+1)    
+                # avg_std = (avg_std * i + std) / (i+1)
         else:
             avg_mu, avg_std = torch.zeros(latent_dim), torch.zeros(latent_dim)
             avg_mu, avg_std = avg_mu.to(self.device), avg_std.to(self.device)
             mean_paths = glob.glob(save_dir+'/batch*mean.npy')
-            std_paths = glob.glob(save_dir+'/batch*std.npy')
+            std_paths = glob.glob(save_dir+'/batch*log_var.npy')
+            # std_paths = glob.glob(save_dir+'/batch*std.npy')
             mean_paths.sort()
             std_paths.sort()
             for i, (mean_path, std_path) in enumerate(zip(mean_paths, std_paths)):
                 mu = torch.from_numpy(np.load(mean_path)).to(self.device)
                 std = torch.from_numpy(np.load(std_path)).to(self.device)
-                avg_mu = (avg_mu * 0 + mu) / (i+1) 
-                avg_std = (avg_std * 0 + std) / (i+1) 
+                avg_mu = (avg_mu * i + mu) / (i+1) 
+                avg_std = (avg_std * i + std) / (i+1) 
+            avg_std = torch.exp(0.5 * avg_std)  # added 
         np.save(os.path.join(self.config['training']['out_dir'], 'autoshift_mean.npy'), avg_mu.cpu().numpy())
         np.save(os.path.join(self.config['training']['out_dir'], 'autoshift_std.npy'), avg_std.cpu().numpy())
 
