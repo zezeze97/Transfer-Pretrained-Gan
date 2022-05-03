@@ -22,7 +22,7 @@ training:
     type: l2
     lambda : 0.01
   nworkers: 8
-  batch_size: 64
+  batch_size: 32
   epochs: 2000
   lr: 0.005
   pretrain_ckpt_file: pretrained_ckpt/lsunbedroom/lsun_bedroom-df4e7dd2.pt
