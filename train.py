@@ -161,6 +161,18 @@ elif config['z_dist']['type'] == 'gmm':
                         gmm_mean=gmm_mean, 
                         gmm_cov=gmm_cov, 
                         device=device)
+elif config['z_dist']['type'] == 'kde':
+    # load latent vectors npy file
+    latentvec_dir = config['z_dist']['latentvec_dir']
+    for i,filename in enumerate(os.listdir(latentvec_dir)):
+        if i == 0:
+            latentvecs = np.load(os.path.join(latentvec_dir, filename))
+        else:
+            current_vecs = np.load(os.path.join(latentvec_dir, filename))
+            latentvecs = np.concatenate((current_vecs,latentvecs),axis=0)
+
+    print('latentvecs shape: ', latentvecs.shape)
+    zdist = get_zdist(dist_name='kde', dim=config['z_dist']['dim'], latentvecs=latentvecs, device=None)
 else:
     raise NotImplementedError
 print('noise type: ', config['z_dist']['type'])
