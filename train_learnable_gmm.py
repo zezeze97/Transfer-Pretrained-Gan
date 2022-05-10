@@ -220,8 +220,9 @@ if finetune_mode:
             discriminator.load_state_dict(discriminator_state_dict)
             print('pretrained discriminator loaded!')
     else:
-        pretrained_ckpt = config['training']['pretrain_ckpt_file']
-        load_dict = checkpoint_io.load(pretrained_ckpt)
+        loaded_dict = torch.load(config['training']['pretrain_ckpt_file'])
+        generator.load_state_dict(loaded_dict['generator'])
+        discriminator.load_state_dict(loaded_dict['discriminator'])
         print('pretrained generator and discriminator loaded!')
     it = epoch_idx = -1
 
