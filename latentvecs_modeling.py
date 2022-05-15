@@ -75,6 +75,6 @@ def main(method, prefix):
 
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/lsun_kitchen_mini_train'
+    prefix = 'output/vec2img/cathedral_sub1000_256dim_special_init_fix'
     method = 'gauss mixture'
     main(method, prefix)
