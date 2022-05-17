@@ -1,0 +1,36 @@
+data:
+  type: image
+  train_dir: data/cityscapes
+  test_dir: data/cityscapes
+  lsun_categories_train: null
+  simple_transform: true
+  img_size: 128
+  nlabels: 1
+generator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+z_dist:
+  type: gauss
+  dim: 256
+training:
+  load_from: null
+  use_regularization: false
+  regularization:
+    type: l2
+    lambda : 0.01
+  nworkers: 8
+  batch_size: 32
+  epochs: 2000
+  lr: 0.005
+  pretrain_ckpt_file: pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  omit_embedding_layer: true
+  class_embedding: output/cityscapes/class_embedding/class_embedding.npy
+  fix_class_embedding: True
+  save_per_epoch: 100
+  out_dir: output/vec2img/cityscapes_256dim_special_init_fix
+  lr_scheduler:
+    milestones_step: 1500
+    gamma: 0.1
