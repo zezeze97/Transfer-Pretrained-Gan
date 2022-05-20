@@ -187,7 +187,7 @@ for epoch in range(epochs):
         generator.eval()
         if not config['training']['fix_class_embedding']:
             try:
-                print('setting generator embedding layer trainabel')
+                print('setting generator embedding layer trainable')
                 generator.embedding.train()
             except AttributeError as e:
                 print(e)
