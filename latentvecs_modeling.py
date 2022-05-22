@@ -31,11 +31,12 @@ def main(method, prefix):
         print('var',np.mean(cov.diagonal()))
     
     if method == 'gauss mixture':
+       
+        '''
         # select best gmm model
         aic_list = []
         best_aic = np.infty
         best_n_components = 0
-        '''
         for n_components in range(1,11):
             model = mixture.GaussianMixture(n_components=n_components, covariance_type='full', verbose=2, verbose_interval=1)
             gm = model.fit(latent_vecs)
@@ -75,6 +76,6 @@ def main(method, prefix):
 
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/cathedral_sub1000_256dim_special_init_fix'
+    prefix = 'output/vec2img/imagenet2kitchen_256dim_special_init_fix'
     method = 'gauss mixture'
     main(method, prefix)
