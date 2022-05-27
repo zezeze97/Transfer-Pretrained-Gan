@@ -229,12 +229,13 @@ if finetune_mode:
 # Load checkpoint if it exists
 try:
     load_dict = checkpoint_io.load(model_file)
-except FileNotFoundError:
-    it = epoch_idx = -1
-else:
     it = load_dict.get('it', -1)
     epoch_idx = load_dict.get('epoch_idx', -1)
     logger.load_stats('stats.p')
+except FileNotFoundError:
+    it = epoch_idx = -1
+
+    
 
 # Test generator
 if config['training']['take_model_average']:
