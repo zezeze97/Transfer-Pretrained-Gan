@@ -22,6 +22,8 @@ def get_zdist(dist_name, dim, mean=None, cov=None, gmm_components_weight=None, g
         zdist = GMM(gmm_components_weight, gmm_mean, gmm_cov, device)
     elif dist_name == 'kde':
         zdist = KDE(latentvecs, device)
+    elif dist_name == 'gmm2gauss':
+        zdist = GMM2Gauss(dim, gmm_components_weight, gmm_mean, gmm_cov, device)
     else:
         raise NotImplementedError
 
@@ -70,6 +72,29 @@ class GMM:
        return torch.FloatTensor(np.concatenate(points)).to(self.device) 
 
 
+class GMM2Gauss:  
+   def __init__(self, dim=None, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):  
+       self.gmm_components_weight = gmm_components_weight  
+       self.gmm_mean = gmm_mean
+       self.gmm_cov = gmm_cov
+       self.device = device
+       self.dim = dim
+   def sample(self, sample_shape, use_gmm):
+        num_sample = sample_shape[0]
+        if use_gmm:
+            num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
+            points = []  
+            for component_index, num in enumerate(num_for_classes):  
+                mean = self.gmm_mean[component_index,:]
+                cov = self.gmm_cov[component_index,:,:]
+                points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
+            output = torch.FloatTensor(np.concatenate(points)).to(self.device) 
+        else:
+            sample = np.random.randn(num_sample, self.dim)
+            output = torch.FloatTensor(sample).to(self.device) 
+        return output
+
+
 class KDE:  
     def __init__(self, latentvecs=None, device=None): 
         print('fitting latentvecs using kde...') 
@@ -90,19 +115,9 @@ class KDE:
 
 
 if __name__ == '__main__':
-    import os
-    latentvec_dir = 'output/vec2img/cathedral_256dim_special_init_fix/latentvecs/'
-
-    # load latent vectors npy file
-    for i,filename in enumerate(os.listdir(latentvec_dir)):
-        if i == 0:
-            latentvecs = np.load(latentvec_dir + filename)
-        else:
-            current_vecs = np.load(latentvec_dir + filename)
-            latentvecs = np.concatenate((current_vecs,latentvecs),axis=0)
-
-    print('latentvecs shape: ', latentvecs.shape)
-    zdist = get_zdist(dist_name='kde', dim=256, latentvecs=latentvecs, device=None)
-    sample = zdist.sample((16,))
-    sample = zdist.sample((16,))
+    gmm_components_weight = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_components_weights.npy')
+    gmm_mean = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_mean.npy')
+    gmm_cov = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_cov.npy')
+    zdist = get_zdist(dist_name='gmm2gauss', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
+    sample = zdist.sample((16,),use_gmm=False)
     print('sample shape: ', sample.shape)

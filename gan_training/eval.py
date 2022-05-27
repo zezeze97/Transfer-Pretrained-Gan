@@ -7,20 +7,24 @@ import os
 import cv2
 from tqdm import tqdm
 class Evaluator(object):
-    def __init__(self, generator, zdist, ydist, batch_size=64,
+    def __init__(self, generator, zdist_type, zdist, ydist, batch_size=64,
                  inception_nsamples=60000, device=None):
         self.generator = generator
+        self.zdist_type = zdist_type
         self.zdist = zdist
         self.ydist = ydist
         self.inception_nsamples = inception_nsamples
         self.batch_size = batch_size
         self.device = device
 
-    def compute_inception_score(self):
+    def compute_inception_score(self, use_gmm=False):
         self.generator.eval()
         imgs = []
         while(len(imgs) < self.inception_nsamples):
-            ztest = self.zdist.sample((self.batch_size,))
+            if self.zdist_type == 'gmm2gauss':
+                ztest = self.zdist.sample((self.batch_size,),use_gmm)
+            else:
+                ztest = self.zdist.sample((self.batch_size,))
             ytest = self.ydist.sample((self.batch_size,))
 
             samples = self.generator(ztest, ytest)
@@ -39,7 +43,7 @@ class Evaluator(object):
         fid = calculate_fid_given_paths(paths, batch_size=self.batch_size, img_size=img_size, device=self.device, dims=2048, num_workers=1)
         return fid
 
-    def save_samples(self, sample_num, save_dir):
+    def save_samples(self, sample_num, save_dir, use_gmm=False):
         self.generator.eval()
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -47,7 +51,10 @@ class Evaluator(object):
         num_of_img = 0
         flag = True
         while flag:
-            z = self.zdist.sample((self.batch_size,))
+            if self.zdist_type == 'gmm2gauss':
+                z = self.zdist.sample((self.batch_size,), use_gmm)
+            else:
+                z = self.zdist.sample((self.batch_size,))
             y = self.ydist.sample((self.batch_size,))
             with torch.no_grad():
                 x = self.generator(z, y)

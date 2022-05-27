@@ -135,26 +135,21 @@ logger = Logger(
     monitoring_dir=path.join(out_dir, 'monitoring')
 )
 
-# load mean and cov of latentvecs if neccessary
-if config['z_dist']['type'] == 'multivariate_normal':
-    mean_path = config['z_dist']['mean_path']
-    cov_path = config['z_dist']['cov_path']
-    mean = torch.FloatTensor(np.load(mean_path))
-    cov = torch.FloatTensor(np.load(cov_path))
-# load gmm parameters if neccessary
-if config['z_dist']['type'] == 'gmm':
-    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
-    gmm_mean = np.load(config['z_dist']['gmm_mean'])
-    gmm_cov = np.load(config['z_dist']['gmm_cov'])
-
 
 # Distributions
 ydist = get_ydist(nlabels, device=device)
 if config['z_dist']['type'] == 'gauss':
     zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
 elif config['z_dist']['type'] == 'multivariate_normal':
+    mean_path = config['z_dist']['mean_path']
+    cov_path = config['z_dist']['cov_path']
+    mean = torch.FloatTensor(np.load(mean_path))
+    cov = torch.FloatTensor(np.load(cov_path))
     zdist = get_zdist(dist_name=config['z_dist']['type'], dim=config['z_dist']['dim'], mean=mean, cov=cov, device=device)
 elif config['z_dist']['type'] == 'gmm':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
     zdist = get_zdist(dist_name=config['z_dist']['type'], 
                         dim=config['z_dist']['dim'], 
                         gmm_components_weight=gmm_components_weight, 
@@ -172,7 +167,19 @@ elif config['z_dist']['type'] == 'kde':
             latentvecs = np.concatenate((current_vecs,latentvecs),axis=0)
 
     print('latentvecs shape: ', latentvecs.shape)
-    zdist = get_zdist(dist_name='kde', dim=config['z_dist']['dim'], latentvecs=latentvecs, device=None)
+    zdist = get_zdist(dist_name='kde', dim=config['z_dist']['dim'], latentvecs=latentvecs, device=device)
+
+elif config['z_dist']['type'] == 'gmm2gauss':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
+    zdist = get_zdist(dist_name=config['z_dist']['type'], 
+                        dim=config['z_dist']['dim'], 
+                        gmm_components_weight=gmm_components_weight, 
+                        gmm_mean=gmm_mean, 
+                        gmm_cov=gmm_cov, 
+                        device=device)
+
 else:
     raise NotImplementedError
 print('noise type: ', config['z_dist']['type'])
@@ -181,7 +188,10 @@ print('noise type: ', config['z_dist']['type'])
 ntest = batch_size
 x_real, ytest = utils.get_nsamples(train_loader, ntest)
 ytest.clamp_(None, nlabels-1)
-ztest = zdist.sample((ntest,))
+if config['z_dist']['type'] == 'gmm2gauss':
+    ztest = zdist.sample((ntest,), use_gmm=True)
+else:
+    ztest = zdist.sample((ntest,))
 utils.save_images(x_real, path.join(out_dir, 'real.png'))
 
 
@@ -256,7 +266,8 @@ else:
     generator_test = generator
 
 # Evaluator
-evaluator = Evaluator(generator_test, zdist, ydist,
+zdist_type=config['z_dist']['type']
+evaluator = Evaluator(generator_test, zdist_type, zdist, ydist,
                       batch_size=batch_size, device=device)
                       
 # Reinitialize model average if needed
@@ -297,6 +308,13 @@ while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
 
+    # decide wheather to use gmm when zdist type is gmm2gauss
+    if zdist_type == 'gmm2gauss':
+        if epoch_idx < max_epoch/2:
+            use_gmm = True
+        else:
+            use_gmm = False
+
     for x_real, y in train_loader:
         it += 1
         
@@ -311,7 +329,10 @@ while flag:
         y.clamp_(None, nlabels-1)
 
         # Discriminator updates
-        z = zdist.sample((batch_size,))
+        if config['z_dist']['type'] == 'gmm2gauss':
+            z = zdist.sample((batch_size,), use_gmm)
+        else:
+            z = zdist.sample((batch_size,))
         dloss, reg = trainer.discriminator_trainstep(x_real, y, z)
         d_scheduler.step()
         logger.add('losses', 'discriminator', dloss, it=it)
@@ -319,7 +340,10 @@ while flag:
 
         # Generators updates
         if ((it + 1) % d_steps) == 0:
-            z = zdist.sample((batch_size,))
+            if config['z_dist']['type'] == 'gmm2gauss':
+                z = zdist.sample((batch_size,), use_gmm)
+            else:
+                z = zdist.sample((batch_size,))
             gloss = trainer.generator_trainstep(y, z)
             logger.add('losses', 'generator', gloss, it=it)
 
@@ -346,7 +370,10 @@ while flag:
         # (ii) Compute inception or fid if necessary
         if inception_every > 0 and ((it + 1) % inception_every) == 0:
             print('Computing inception score...')
-            inception_mean, inception_std = evaluator.compute_inception_score()
+            if config['z_dist']['type'] == 'gmm2gauss':
+                inception_mean, inception_std = evaluator.compute_inception_score(use_gmm)
+            else:
+                inception_mean, inception_std = evaluator.compute_inception_score()
             logger.add('inception_score', 'mean', inception_mean, it=it)
             logger.add('inception_score', 'stddev', inception_std, it=it)
 
@@ -354,7 +381,10 @@ while flag:
             # generate and save fake images
             print('Generating fake images to compute fid...')
             fid_fake_image_save_dir=os.path.join(out_dir, 'imgs','fid_fake_imgs')
-            evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
+            if config['z_dist']['type'] == 'gmm2gauss':
+                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, use_gmm=use_gmm)
+            else:
+                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
             print('Computiong fid...')
             fid_img_size = (config['data']['img_size'], config['data']['img_size'])
             fid = evaluator.compute_fid_score(generated_img_path = fid_fake_image_save_dir, 
