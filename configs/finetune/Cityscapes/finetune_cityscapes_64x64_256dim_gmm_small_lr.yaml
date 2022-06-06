@@ -7,7 +7,7 @@ data:
   img_size: 64
   nlabels: 1
 generator:
-  name: resnet2
+  name: resnet2_small
   kwargs:
     nfilter: 64
     nfilter_max: 1024
