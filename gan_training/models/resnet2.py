@@ -231,12 +231,13 @@ class Generator_Omit_ClassEmbedding(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, z_dim, nlabels, size, embed_size=256, nfilter=64, **kwargs):
+    def __init__(self, z_dim, nlabels, size, embed_size=256, nfilter=64, extract_feature=False, **kwargs):
         super().__init__()
         self.embed_size = embed_size
         s0 = self.s0 = size // 32
         nf = self.nf = nfilter
         ny = nlabels
+        self.extract_feature = extract_feature
 
         # Submodules
         self.conv_img = nn.Conv2d(3, 1*nf, 3, padding=1)
@@ -292,14 +293,16 @@ class Discriminator(nn.Module):
         out = self.resnet_5_1(out)
 
         out = out.view(batch_size, 16*self.nf*self.s0*self.s0)
-        out = self.fc(actvn(out))
+        feature = self.fc(actvn(out))
 
-        index = Variable(torch.LongTensor(range(out.size(0))))
+        index = Variable(torch.LongTensor(range(feature.size(0))))
         if y.is_cuda:
             index = index.cuda()
-        out = out[index, y]
-
-        return out
+        out = feature[index, y]
+        if self.extract_feature:
+            return out, feature
+        else:
+            return out
 
 
 class ResnetBlock(nn.Module):
