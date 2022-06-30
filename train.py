@@ -66,6 +66,7 @@ checkpoint_dir = path.join(out_dir, 'chkpts')
 change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
 change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
 max_epoch = config['training']['max_epoch']
+max_iter = config['training']['max_iter']
 # Create missing directories
 if not path.exists(out_dir):
     os.makedirs(out_dir)
@@ -411,4 +412,6 @@ while flag:
             if (restart_every > 0 and t0 - tstart > restart_every):
                 exit(3)
     if epoch_idx > max_epoch:
+        flag = False
+    if it > max_iter:
         flag = False
