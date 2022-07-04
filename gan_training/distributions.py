@@ -112,6 +112,29 @@ class KDE:
         samles = self.kde.sample(n_samples=num_sample)
         return torch.FloatTensor(samles).to(self.device) 
 
+class Limited_Data_GMM:
+    '''
+    eps: least distance between samples
+    
+    '''
+    def __init__(self, eps, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):
+        self.eps = eps
+        self.gmm_components_weight = gmm_components_weight  
+        self.gmm_mean = gmm_mean
+        self.gmm_cov = gmm_cov
+        self.device = device
+ 
+    def sample(self, sample_shape):  
+        num_sample = sample_shape[0]
+        num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
+        points = []  
+        for component_index, num in enumerate(num_for_classes):  
+            mean = self.gmm_mean[component_index,:]
+            cov = self.gmm_cov[component_index,:,:]
+            points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
+        return torch.FloatTensor(np.concatenate(points)).to(self.device) 
+
+
 
 
 if __name__ == '__main__':

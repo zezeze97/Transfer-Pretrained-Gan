@@ -97,20 +97,53 @@ ydist = get_ydist(nlabels, device=device)
 if config['z_dist']['type'] == 'gauss':
     zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
 elif config['z_dist']['type'] == 'multivariate_normal':
+    mean_path = config['z_dist']['mean_path']
+    cov_path = config['z_dist']['cov_path']
+    mean = torch.FloatTensor(np.load(mean_path))
+    cov = torch.FloatTensor(np.load(cov_path))
     zdist = get_zdist(dist_name=config['z_dist']['type'], dim=config['z_dist']['dim'], mean=mean, cov=cov, device=device)
 elif config['z_dist']['type'] == 'gmm':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
     zdist = get_zdist(dist_name=config['z_dist']['type'], 
                         dim=config['z_dist']['dim'], 
                         gmm_components_weight=gmm_components_weight, 
                         gmm_mean=gmm_mean, 
                         gmm_cov=gmm_cov, 
                         device=device)
+elif config['z_dist']['type'] == 'kde':
+    # load latent vectors npy file
+    latentvec_dir = config['z_dist']['latentvec_dir']
+    for i,filename in enumerate(os.listdir(latentvec_dir)):
+        if i == 0:
+            latentvecs = np.load(os.path.join(latentvec_dir, filename))
+        else:
+            current_vecs = np.load(os.path.join(latentvec_dir, filename))
+            latentvecs = np.concatenate((current_vecs,latentvecs),axis=0)
+
+    print('latentvecs shape: ', latentvecs.shape)
+    zdist = get_zdist(dist_name='kde', dim=config['z_dist']['dim'], latentvecs=latentvecs, device=device)
+
+elif config['z_dist']['type'] == 'gmm2gauss':
+    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
+    gmm_mean = np.load(config['z_dist']['gmm_mean'])
+    gmm_cov = np.load(config['z_dist']['gmm_cov'])
+    zdist = get_zdist(dist_name=config['z_dist']['type'], 
+                        dim=config['z_dist']['dim'], 
+                        gmm_components_weight=gmm_components_weight, 
+                        gmm_mean=gmm_mean, 
+                        gmm_cov=gmm_cov, 
+                        device=device)
+
 else:
     raise NotImplementedError
 print('noise type: ', config['z_dist']['type'])
 
+
 # Evaluator
-evaluator = Evaluator(generator_test, zdist, ydist,
+zdist_type=config['z_dist']['type']
+evaluator = Evaluator(generator_test, zdist_type, zdist, ydist,
                       batch_size=batch_size, device=device)
 
 # Load checkpoint if existant
@@ -132,7 +165,7 @@ if config['test']['compute_fid']:
     print('Computing FID score...')
     fid_img_size = (config['data']['img_size'], config['data']['img_size'])
     fid = evaluator.compute_fid_score(generated_img_path = fid_test_dir, 
-                                        gt_path = config['data']['train_dir'] + '/0/', 
+                                        gt_path = config['data']['test_dir'] + '/0/', 
                                         img_size = fid_img_size)
     print('FID: ', fid)
 

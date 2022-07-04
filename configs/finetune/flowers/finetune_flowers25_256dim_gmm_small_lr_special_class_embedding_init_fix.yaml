@@ -1,7 +1,7 @@
 data:
   type: image
   train_dir: data/Flowers_25
-  test_dir: data/Flowers_25
+  test_dir: data/Flowers251
   lsun_categories_train: null
   lsun_categories_test: null
   img_size: 128
@@ -42,10 +42,10 @@ training:
   max_epoch: 60000
   save_every: 1000
 test:
-  model_file: 'model.pt'
-  batch_size: 32 
+  model_file: 'model_best.pt'
+  batch_size: 25 
   sample_size: 64 
   sample_nrow: 8
   compute_inception: false
   compute_fid: true
-  fid_fake_imgs_num: 8000
+  fid_fake_imgs_num: 251
