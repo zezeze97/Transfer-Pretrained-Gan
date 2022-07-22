@@ -18,8 +18,10 @@ import numpy as np
 parser = argparse.ArgumentParser(
     description='Test a trained GAN and create visualizations.'
 )
-parser.add_argument('config', type=str, help='Path to config file.')
+parser.add_argument('--config', type=str, help='Path to config file.')
+parser.add_argument('--test_imagenet', action='store_true', help='Test imagenet.')
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
+
 
 args = parser.parse_args()
 
@@ -27,7 +29,10 @@ config = load_config(args.config, 'configs/default.yaml')
 is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
 # Shorthands
-nlabels = config['data']['nlabels']
+if args.test_imagenet:
+    nlabels = 1000
+else:
+    nlabels = config['data']['nlabels']
 out_dir = config['training']['out_dir']
 batch_size = config['test']['batch_size']
 sample_size = config['test']['sample_size']
@@ -165,7 +170,7 @@ if config['test']['compute_fid']:
     print('Computing FID score...')
     fid_img_size = (config['data']['img_size'], config['data']['img_size'])
     fid = evaluator.compute_fid_score(generated_img_path = fid_test_dir, 
-                                        gt_path = config['data']['test_dir'] + '/0/', 
+                                        gt_path = (config['data']['test_dir'] + '/0/') if args.test_imagenet else "data/Imagenet/ILSVRC2012_img_val", 
                                         img_size = fid_img_size)
     print('FID: ', fid)
 

@@ -27,11 +27,11 @@ device = torch.device("cuda:0" if is_cuda else "cpu")
 
 
 # Load checkpoint 
-finetnue_base_ckpt_stat_dict = torch.load(args.fintune_ckpt_path_baseline, map_location=device)
-fintune_ckpt_stat_dict = torch.load(args.fintune_ckpt_path, map_location=device)
+finetnue_base_ckpt_stat_dict = torch.load(args.finetune_ckpt_path_baseline, map_location=device)
+finetune_ckpt_stat_dict = torch.load(args.finetune_ckpt_path, map_location=device)
 pretrained_ckpt_stat_dict = torch.load(args.pretrained_ckpt_path, map_location=device)
 finetune_generator_base_weights = finetnue_base_ckpt_stat_dict['generator']
-finetune_generator_weights = fintune_ckpt_stat_dict['generator']
+finetune_generator_weights = finetune_ckpt_stat_dict['generator']
 pretrained_generator_weights = pretrained_ckpt_stat_dict['generator']
 
 # Only conv weigh take into account!
@@ -45,7 +45,7 @@ for k in finetune_generator_weights.keys():
 def get_cos_similar(v1, v2):
     num = float(np.dot(v1, v2))  
     denom = np.linalg.norm(v1) * np.linalg.norm(v2)  
-    return num / denom if denom != 0 else 0
+    return np.abs(num / denom) if denom != 0 else 0
 
 select_layer_list = ["module.resnet_0_0.conv_0.weight",
                         "module.resnet_1_0.conv_0.weight",
@@ -82,7 +82,7 @@ for key in tqdm(select_layer_list):
     output_dict[key] = {'gauss':sim_b_list,'gmm':sim_list}
 
 # save
-outdir = os.path.join(args.outdir,args.fintune_ckpt_path.split('/')[-3])
+outdir = os.path.join(args.outdir,args.finetune_ckpt_path.split('/')[-3])
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 
