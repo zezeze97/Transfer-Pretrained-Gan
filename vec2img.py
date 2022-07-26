@@ -158,7 +158,10 @@ if omit_embedding_layer:
         class_embedding = torch.FloatTensor(np.load(config['training']['class_embedding']))
         # (256,) -> (1,256)
         class_embedding = torch.unsqueeze(class_embedding, dim=0)
-        new_dict['embedding.weight'] = class_embedding
+        if nlabels == 1:
+            new_dict['embedding.weight'] = class_embedding
+        else:
+            new_dict['embedding.weight'] = class_embedding.repeat((nlabels,1))
     generator_state_dict.update(new_dict)
     generator.load_state_dict(generator_state_dict)
 else:
