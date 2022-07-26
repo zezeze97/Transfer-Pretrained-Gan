@@ -20,6 +20,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('--config', type=str, help='Path to config file.')
 parser.add_argument('--test_imagenet', action='store_true', help='Test imagenet.')
+parser.add_argument('--pretrained_ckpt_path', type=str, help='Path to pretrained ckpt if need to test imagenet.', default=None)
+parser.add_argument('--imagenet_path', type=str, help='Path to imagenet path', default=None)
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
 
 
@@ -31,6 +33,9 @@ is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 # Shorthands
 if args.test_imagenet:
     nlabels = 1000
+    config['data']['nlabels'] = 1000
+    config['z_dist']['type'] = 'gauss'
+    config['test']['conditional_samples'] = True
 else:
     nlabels = config['data']['nlabels']
 out_dir = config['training']['out_dir']
@@ -41,7 +46,11 @@ checkpoint_dir = path.join(out_dir, 'chkpts')
 img_dir = path.join(out_dir, 'test', 'img')
 img_all_dir = path.join(out_dir, 'test', 'img_all')
 fid_test_dir = path.join(out_dir, 'test', 'fid_fake_imgs')
-fid_fake_imgs_num = config['test']['fid_fake_imgs_num']
+if args.test_imagenet:
+    fid_fake_imgs_num = len(os.listdir(args.imagenet_path))
+
+else:
+    fid_fake_imgs_num = config['test']['fid_fake_imgs_num']
 # Creat missing directories
 if not path.exists(img_dir):
     os.makedirs(img_dir)
@@ -152,9 +161,18 @@ evaluator = Evaluator(generator_test, zdist_type, zdist, ydist,
                       batch_size=batch_size, device=device)
 
 # Load checkpoint if existant
-load_dict = checkpoint_io.load(model_file)
-it = load_dict.get('it', -1)
-epoch_idx = load_dict.get('epoch_idx', -1)
+
+# change class embedding layer if test imagenet
+if args.test_imagenet:
+    pretrained_class_embedding = torch.load(args.pretrained_ckpt_path)['generator']['module.embedding.weight']
+    finetune_stat_dict = torch.load(os.path.join(config['training']['out_dir'], "chkpts", config['test']['model_file']))['generator']
+    finetune_stat_dict['module.embedding.weight'] = pretrained_class_embedding
+    generator_test.load_state_dict(finetune_stat_dict)
+    it = -1
+else:
+    load_dict = checkpoint_io.load(model_file)
+    it = load_dict.get('it', -1)
+    epoch_idx = load_dict.get('epoch_idx', -1)
 
 # Inception score
 if config['test']['compute_inception']:
@@ -169,8 +187,16 @@ if config['test']['compute_fid']:
     evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_test_dir)
     print('Computing FID score...')
     fid_img_size = (config['data']['img_size'], config['data']['img_size'])
+
+    if args.test_imagenet:
+        gt_path = args.imagenet_path
+    else:
+        gt_path = config['data']['test_dir'] + '/0/'
+        
+        
+
     fid = evaluator.compute_fid_score(generated_img_path = fid_test_dir, 
-                                        gt_path = (config['data']['test_dir'] + '/0/') if args.test_imagenet else "data/Imagenet/ILSVRC2012_img_val", 
+                                        gt_path = gt_path, 
                                         img_size = fid_img_size)
     print('FID: ', fid)
 

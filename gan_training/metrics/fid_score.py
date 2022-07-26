@@ -74,7 +74,7 @@ parser.add_argument('path', type=str, nargs=2,
                           'to .npz statistic files'))
 
 IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm',
-                    'tif', 'tiff', 'webp'}
+                    'tif', 'tiff', 'webp', 'JPEG'}
 
 
 class ImagePathDataset(torch.utils.data.Dataset):
