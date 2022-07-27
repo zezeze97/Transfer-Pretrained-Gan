@@ -389,7 +389,7 @@ while flag:
             print('Computiong fid...')
             fid_img_size = (config['data']['img_size'], config['data']['img_size'])
             fid = evaluator.compute_fid_score(generated_img_path = fid_fake_image_save_dir, 
-                                                gt_path = config['data']['train_dir'] + '/0/', 
+                                                gt_path = config['data']['test_dir'] + '/0/', 
                                                 img_size = fid_img_size)
             logger.add('fid', 'score', fid, it=it)
             if fid < best_fid:
