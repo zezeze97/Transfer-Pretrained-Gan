@@ -7,6 +7,7 @@ generator_dict = {
     'resnet2': resnet2.Generator,
     'resnet2_omit_class_embedding': resnet2.Generator_Omit_ClassEmbedding,
     'resnet2_small': resnet2.Generator_Small,
+    'resnet2_interpolate': resnet2.GeneratorInterpolate,
     'resnet3': resnet3.Generator,
     'resnet4': resnet4.Generator,
 }
