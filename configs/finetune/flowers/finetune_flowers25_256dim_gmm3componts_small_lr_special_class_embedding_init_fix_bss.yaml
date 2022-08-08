@@ -1,13 +1,13 @@
 data:
   type: image
-  train_dir: data/Flower25_cls5
+  train_dir: data/Flowers_25
   test_dir: data/Flowers251
   lsun_categories_train: null
   lsun_categories_test: null
   img_size: 128
-  nlabels: 5
+  nlabels: 1
 generator:
-  name: resnet2_interpolate
+  name: resnet2
   kwargs:
     nfilter: 64
     nfilter_max: 1024
@@ -18,38 +18,37 @@ discriminator:
     nfilter: 64
     nfilter_max: 1024
     embed_size: 256
+    extract_feature: true
 z_dist:
   type: gmm
   dim: 256
-  gmm_components_weight: output/vec2img/flowers25_cls5_256dim_special_init/gmm_components_weights_components.npy
-  gmm_mean: output/vec2img/flowers25_cls5_256dim_special_init/gmm_mean.npy
-  gmm_cov: output/vec2img/flowers25_cls5_256dim_special_init/gmm_cov.npy
+  gmm_components_weight: output/vec2img/flowers25_256dim_special_init_fix/gmm_components_weights_3_components.npy
+  gmm_mean: output/vec2img/flowers25_256dim_special_init_fix/gmm_3_mean.npy
+  gmm_cov: output/vec2img/flowers25_256dim_special_init_fix/gmm_3_cov.npy
 training:
   batch_size: 16
   change_generator_embedding_layer: true
   change_discriminator_fc_layer: true
   pretrain_ckpt_file: null
-  generator_pretrained_ckpt_file: output/vec2img/flowers25_cls5_256dim_special_init/chkpts/generator.pth
+  generator_pretrained_ckpt_file: output/vec2img/flowers25_256dim_special_init_fix/chkpts/generator.pth
   discriminator_pretrained_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/flowers25_cls5_256dim_gmm_small_lr_special_init_fix_real_fake_interpolate
+  out_dir: output/finetune/flowers25_256dim_gmm3componts_small_lr_special_init_fix_bss
   inception_every: -1
   fid_every: 1000
   sample_every: 1000
   fid_fake_imgs_num: 251
+  bss_lambda: 0.1
+  bss_num_of_index: 10
   lr_g: 0.000025
   lr_d: 0.000025
-  max_epoch: 600000
-  max_iter: 60000
+  max_epoch: 60000
   save_every: 1000
-  reg_type: real_fake
-  reg_param: 20.0
-  mix_prob: 0.5
 test:
-  model_file: 'model_best.pt'
-  batch_size: 16 
+  model_file: 'model.pt'
+  batch_size: 32 
   sample_size: 64 
   sample_nrow: 8
   compute_inception: false
   compute_fid: true
-  fid_fake_imgs_num: 251
+  fid_fake_imgs_num: 8000

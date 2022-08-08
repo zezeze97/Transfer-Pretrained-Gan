@@ -374,13 +374,13 @@ class Discriminator(nn.Module):
         out = self.resnet_5_0(out)
         out = self.resnet_5_1(out)
 
-        out = out.view(batch_size, 16*self.nf*self.s0*self.s0)
-        feature = self.fc(actvn(out))
+        feature = out.view(batch_size, 16*self.nf*self.s0*self.s0)
+        out = self.fc(actvn(feature))
 
-        index = Variable(torch.LongTensor(range(feature.size(0))))
+        index = Variable(torch.LongTensor(range(out.size(0))))
         if y.is_cuda:
             index = index.cuda()
-        out = feature[index, y]
+        out = out[index, y]
         if self.extract_feature:
             return out, feature
         else:
