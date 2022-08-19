@@ -290,7 +290,8 @@ trainer = TrainerClassInterpolate(
     frozen_discriminator=config['training']['frozen_discriminator'],
     frozen_generator_param_list=config['training']['frozen_generator_param_list'],
     frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list'],
-    mix_prob=config['training']['mix_prob']
+    mix_prob=config['training']['mix_prob'],
+    contract_lam = config['training']['contract_lam']
 )
 
 # sample before training
@@ -332,10 +333,12 @@ while flag:
 
         # Discriminator updates
         if config['z_dist']['type'] == 'gmm2gauss':
-            z = zdist.sample((batch_size,), use_gmm)
+            z1 = zdist.sample((batch_size,), use_gmm)
+            z2 = zdist.sample((batch_size,), use_gmm)
         else:
-            z = zdist.sample((batch_size,))
-        dloss, reg = trainer.discriminator_trainstep(x_real, y, z)
+            z1 = zdist.sample((batch_size,))
+            z2 = zdist.sample((batch_size,))
+        dloss, reg = trainer.discriminator_trainstep(x_real, y, z1, z2)
         d_scheduler.step()
         logger.add('losses', 'discriminator', dloss, it=it)
         logger.add('losses', 'regularizer', reg, it=it)
@@ -343,10 +346,12 @@ while flag:
         # Generators updates
         if ((it + 1) % d_steps) == 0:
             if config['z_dist']['type'] == 'gmm2gauss':
-                z = zdist.sample((batch_size,), use_gmm)
+                z1 = zdist.sample((batch_size,), use_gmm)
+                z2 = zdist.sample((batch_size,), use_gmm)
             else:
-                z = zdist.sample((batch_size,))
-            gloss = trainer.generator_trainstep(y, z)
+                z1 = zdist.sample((batch_size,))
+                z2 = zdist.sample((batch_size,))
+            gloss = trainer.generator_trainstep(y, z1, z2)
             logger.add('losses', 'generator', gloss, it=it)
 
             if config['training']['take_model_average']:

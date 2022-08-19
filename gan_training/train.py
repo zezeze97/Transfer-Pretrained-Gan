@@ -127,7 +127,7 @@ class Trainer(object):
 class TrainerClassInterpolate(object):
     def __init__(self, generator, discriminator, g_optimizer, d_optimizer,
                  gan_type, reg_type, reg_param, frozen_generator=False, frozen_discriminator=False, 
-                 frozen_generator_param_list=None, frozen_discriminator_param_list=None, mix_prob=0.5):
+                 frozen_generator_param_list=None, frozen_discriminator_param_list=None, mix_prob=0.5, contract_lam=0.1):
         self.generator = generator
         self.discriminator = discriminator
         self.g_optimizer = g_optimizer
@@ -141,9 +141,11 @@ class TrainerClassInterpolate(object):
         self.frozen_generator_param_list = frozen_generator_param_list
         self.frozen_discriminator_param_list = frozen_discriminator_param_list
         self.mix_prob = torch.tensor(mix_prob)
+        self.contract_lam = contract_lam
+        self.l2loss = torch.nn.MSELoss()
 
-    def generator_trainstep(self, y, z):
-        assert(y.size(0) == z.size(0))
+    def generator_trainstep(self, y, z1, z2):
+        assert(y.size(0) == z1.size(0))
         toggle_grad(self.generator, True)
         if self.frozen_generator:
             toggle_grad(self.generator, False, parameters_list=self.frozen_generator_param_list)
@@ -153,18 +155,18 @@ class TrainerClassInterpolate(object):
         self.g_optimizer.zero_grad()
         temp_prob = torch.rand(1)
         if temp_prob < self.mix_prob:
-            x_fake, y_inter, lam = self.generator(z, y, interpolate=True)
-            d_fake = lam * self.discriminator(x_fake, y) + (1.0 - lam) * self.discriminator(x_fake, y_inter)
+            x_mix, y_shuffle, lam = self.generator(z1, y, True, z2)
+            d_fake, _ = self.discriminator(x_mix, y, True, y_shuffle, lam)
         else:
-            x_fake = self.generator(z, y, interpolate=False)
-            d_fake = self.discriminator(x_fake, y)
+            x_fake = self.generator(z1, y, interpolate=False)
+            d_fake, _ = self.discriminator(x_fake, y)
         gloss = self.compute_loss(d_fake, 1)
         gloss.backward()
         self.g_optimizer.step()
 
         return gloss.item()
 
-    def discriminator_trainstep(self, x_real, y, z):
+    def discriminator_trainstep(self, x_real, y, z1, z2):
         toggle_grad(self.generator, False)
         toggle_grad(self.discriminator, True)
         if self.frozen_discriminator:
@@ -176,7 +178,7 @@ class TrainerClassInterpolate(object):
         # On real data
         x_real.requires_grad_()
 
-        d_real = self.discriminator(x_real, y)
+        d_real, _ = self.discriminator(x_real, y)
         dloss_real = self.compute_loss(d_real, 1)
 
         if self.reg_type == 'real' or self.reg_type == 'real_fake':
@@ -190,17 +192,23 @@ class TrainerClassInterpolate(object):
         temp_prob = torch.rand(1)
         with torch.no_grad():
             if temp_prob < self.mix_prob:
-                x_fake, y_inter, lam = self.generator(z, y, interpolate=True)
+                x_fake, y_shuffle, lam = self.generator(z1, y, True, z2)
+                x_fake1 = self.generator(z1, y)
+                x_fake2 = self.generator(z2, y_shuffle)
             else:
-                x_fake = self.generator(z, y, interpolate=False)
-
+                x_fake = self.generator(z1, y, interpolate=False)
         x_fake.requires_grad_()
         if temp_prob < self.mix_prob:
-            d_fake = self.discriminator(x_fake, y)
-            d_fake_inter = self.discriminator(x_fake, y_inter)
-            dloss_fake = lam * self.compute_loss(d_fake, 0) + (1.0 - lam) * self.compute_loss(d_fake_inter, 0)
+            x_fake1.requires_grad_()
+            x_fake2.requires_grad_()
+            d_fake, d_fake_mix_feature = self.discriminator(x_fake, y, True, y_shuffle, lam)
+            _, d_fake_feature1 = self.discriminator(x_fake1, y)
+            _, d_fake_feature2 = self.discriminator(x_fake2, y_shuffle)
+            dloss_fake = self.compute_loss(d_fake, 0)
+            dloss_contract = self.l2loss(d_fake_mix_feature, lam * d_fake_feature1 + (1.0 - lam) * d_fake_feature2)
+            dloss_fake += self.contract_lam * dloss_contract
         else:
-            d_fake = self.discriminator(x_fake, y)
+            d_fake, _ = self.discriminator(x_fake, y)
             dloss_fake = self.compute_loss(d_fake, 0)
 
         if self.reg_type == 'fake' or self.reg_type == 'real_fake':
@@ -247,7 +255,7 @@ class TrainerClassInterpolate(object):
         x_interp = (1 - eps) * x_real + eps * x_fake
         x_interp = x_interp.detach()
         x_interp.requires_grad_()
-        d_out = self.discriminator(x_interp, y)
+        d_out, _ = self.discriminator(x_interp, y)
 
         reg = (compute_grad2(d_out, x_interp).sqrt() - center).pow(2).mean()
 

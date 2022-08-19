@@ -52,13 +52,16 @@ transform = transforms.Compose([
 img_name_list = []
 feature_mat = []
 for img_name in tqdm(os.listdir(args.data_path)):
-    img_name_list.append(img_name)
-    img_path = os.path.join(args.data_path, img_name)
-    img = transform(Image.open(img_path)).unsqueeze(0)
-    with torch.no_grad():
-        feature = image_feature_extractor(img.to(device))['layer_last']
-        feature = feature.detach().cpu().numpy()
-        feature_mat.append(feature)
+    try:
+        img_name_list.append(img_name)
+        img_path = os.path.join(args.data_path, img_name)
+        img = transform(Image.open(img_path)).unsqueeze(0)
+        with torch.no_grad():
+            feature = image_feature_extractor(img.to(device))['layer_last']
+            feature = feature.detach().cpu().numpy()
+            feature_mat.append(feature)
+    except RuntimeError as e:
+        print(e)
 
 feature_mat = np.concatenate(feature_mat)
 
