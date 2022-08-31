@@ -6,48 +6,82 @@
 
 # 数据集准备
     ```
-    data
-    └── LSUN
-        ├── bedroom_train_lmdb
-        ├── bedroom_val_lmdb
-        ├── kitchen_minitrain_png
-        ├── kitchen_train_lmdb
-        ├── kitchen_val_lmdb
-        └── kitchen_val_png
+        ├──data
+            ├── cars1000cls5
+            ├── cars_1000_sub
+            ├── carscls5
+            ├── cars_train
+            ├── cathedral
+            ├── cathedral_1000_sub
+            ├── cathedral_25_sub
+            ├── cityscapes
+            ├── Flower25_cls5
+            ├── Flowers
+            ├── Flowers_1000_sub
+            ├── Flowers_1000_sub_cls
+            ├── Flowers_1000_sub_cls4
+            ├── Flowers_25
+            ├── Flowers251
+            ├── Flowers_class
+            ├── Flowers_cls
+            ├── Imagenet
+            ├── imagenet_fake_data
+            ├── LSUN
+            └── Oxford-IIIT-Pet
     ```
 
-# Finetuning
- 将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中
-## Bedroom -> Kitchen
-    ```
-    # 标准正态Noise
-    python train.py configs/finetune/finetune_lsun_kitchen.yaml
-    # shift noise finetuning
-    python train.py configs/finetune/finetune_lsun_kitchen_shift_batch_mode.yaml
-    ```
+# 图片聚类
+  在需要进行多类别(nlabels > 1)训练时，需要提前离线进行图片聚类
+
+  ```
+  python image_cluster.py --data_path {Path to data} --n_clusters {Num of clusters} --output_dir {Path to save clustering result}
+  ```
+
 
 # 隐向量寻找
-  将所有隐向量寻找相关模型config放在[configs/img2vec2img](configs/img2vec2img), [configs/vec2img](configs/vec2img)中
-## 预训练Bedroom Generator中找Kitchen
+  隐向量寻找的config放在[configs/vec2img](configs/vec2img)中
+
     ```
-    # 拟合kitchen 5w
-    python img2vec2img.py configs/img2vec2img/img2vec2img_lsun_kitchen.yaml
-    python vec2img.py configs/vec2img/vec2img_lsun_kitchen.yaml
-    # 一个batch,一个batch拟合
-    python img2vec2img_batch_mode.py configs/img2vec2img/img2vec2img_lsun_kitche_batch_mode.yaml
-    python vec2img_batch_mode.py configs/vec2img/vec2img_lsun_kitchen_batchmode.yaml
-    python vec2img_batch_mode.py configs/vec2img/vec2img_lsun_kitchen_batchmode_reg.yaml
-    # 计算kitchen5w数据中的mean, cov
-    python compute_mean_cov.py --config configs/img2vec2img/img2vec2img_lsun_kitchen.yaml --img2vec_model_ckpt output/img2vec2img/lsun_kitchen/chkpts/epoch_500_im2vec.pth --output_dir output/img2vec2img/lsun_kitchen
-    python latentvecs_modeling.py
+    python vec2img.py {path of vec2img config}
+    eg: python vec2img.py configs/vec2img/flowers/vec2img_flowers25_cls5_special_class_embedding.yaml
+    ```
+
+# 隐空间建模
+ 将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中的prefix，再进行gmm建模
+
+ ```
+ python latentvecs_modeling.py
+ ```
+
+# Finetuning
+    ```
+    # 单类别/多类别 gmm/gauss/shift gauss/kde
+    python train.py {Path of finetuning config}
+
+    # learnable gmm
+    python train_learnable_gmm.py {Path of finetuning config}
+
+    # class interpolate + contrast loss
+    python train_class_interpolate.py {Path of finetuning config}
+
+    # bss loss
+    python train_bss.py {Path of finetuning config}
+
+    # auxiliary sample + mmd loss
+    python train_limited_data.py {Path of finetuning config}
+
+    # tensorboard 可视化
+    tensorborad --logdir {Path of output dir}
     ```
 
 # 计算fid
+  通常来说，看训练过程中的fid曲线即可，如果要测试，可使用如下命令
+  
     ```
-    python test.py PATH_TO_CONFIG
-    ```
+    # 不在imagenet上测试
+    python test.py --config {Path of finetuning config}
 
-todo:
-    flowers finetuning
-    flowers_latent_vecs_find
-    gauss_mixture_modeling latentvecs
+    # 在imagenet上测试
+    python test.py --config {Path of finetuning config} --test_imagenet --pretrained_ckpt_path {Path to pretrained ckpt if need to test imagenet} --imagenet_path {Path to imagenet}  
+    
+    ```

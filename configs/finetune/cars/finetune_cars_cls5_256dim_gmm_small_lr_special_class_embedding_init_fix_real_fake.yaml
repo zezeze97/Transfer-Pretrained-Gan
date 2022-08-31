@@ -18,7 +18,6 @@ discriminator:
     nfilter: 64
     nfilter_max: 1024
     embed_size: 256
-    extract_feature: true
 z_dist:
   type: gmm
   dim: 256
