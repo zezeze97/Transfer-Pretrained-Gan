@@ -76,6 +76,6 @@ def main(method, prefix):
 
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/flowers25_cls5_256dim_special_init'
+    prefix = 'output/vec2img/cars1000_256dim_cls5'
     method = 'gauss mixture'
     main(method, prefix)
