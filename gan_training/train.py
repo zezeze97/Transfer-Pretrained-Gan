@@ -166,7 +166,7 @@ class TrainerClassInterpolate(object):
 
         return gloss.item()
 
-    def discriminator_trainstep(self, x_real, y, z1, z2):
+    def discriminator_trainstep(self, x_real, y, z):
         toggle_grad(self.generator, False)
         toggle_grad(self.discriminator, True)
         if self.frozen_discriminator:
@@ -192,11 +192,11 @@ class TrainerClassInterpolate(object):
         temp_prob = torch.rand(1)
         with torch.no_grad():
             if temp_prob < self.mix_prob:
-                x_fake, y_shuffle, lam = self.generator(z1, y, True, z2)
-                x_fake1 = self.generator(z1, y)
-                x_fake2 = self.generator(z2, y_shuffle)
+                x_fake, y_shuffle, lam = self.generator(z, y, True)
+                x_fake1 = self.generator(z, y)
+                x_fake2 = self.generator(z, y_shuffle)
             else:
-                x_fake = self.generator(z1, y, interpolate=False)
+                x_fake = self.generator(z, y, interpolate=False)
         x_fake.requires_grad_()
         if temp_prob < self.mix_prob:
             x_fake1.requires_grad_()
