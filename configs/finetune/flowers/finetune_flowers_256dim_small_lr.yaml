@@ -2,8 +2,8 @@ data:
   type: image
   train_dir: data/Flowers
   test_dir: data/Flowers
-  lsun_categories_train: [kitchen_train]
-  lsun_categories_test: [kitchen_val]
+  lsun_categories_train: null
+  lsun_categories_test: null
   img_size: 128
   nlabels: 1
 generator:
@@ -33,8 +33,10 @@ training:
   fid_fake_imgs_num: 8000
   lr_g: 0.000025
   lr_d: 0.000025
+  max_epoch: 600000
+  max_iter: 60000
 test:
-  model_file: 'model.pt'
+  model_file: 'model_best.pt'
   batch_size: 32 
   sample_size: 64 
   sample_nrow: 8
