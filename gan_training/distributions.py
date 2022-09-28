@@ -19,7 +19,7 @@ def get_zdist(dist_name, dim, mean=None, cov=None, gmm_components_weight=None, g
         cov.to(device)
         zdist = distributions.MultivariateNormal(loc=mean, covariance_matrix=cov)
     elif dist_name == 'gmm':
-        zdist = GMM(gmm_components_weight, gmm_mean, gmm_cov, device)
+        zdist = GMMTorch(gmm_components_weight, gmm_mean, gmm_cov, device)
     elif dist_name == 'kde':
         zdist = KDE(latentvecs, device)
     elif dist_name == 'gmm2gauss':
@@ -70,6 +70,25 @@ class GMM:
            cov = self.gmm_cov[component_index,:,:]
            points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
        return torch.FloatTensor(np.concatenate(points)).to(self.device) 
+
+class GMMTorch:  
+    def __init__(self, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):  
+        self.gmm_components_weight = gmm_components_weight
+        gmm_mean = torch.from_numpy(gmm_mean)
+        gmm_cov = torch.from_numpy(gmm_cov)
+        self.device = device
+        num_class = gmm_components_weight.shape[0]
+        self.normals = []
+        for i in range(num_class):
+            zdist = distributions.MultivariateNormal(loc=gmm_mean[i,:], covariance_matrix=gmm_cov[i,:,:])
+            self.normals.append(zdist)
+ 
+    def sample(self, sample_shape):  
+        num_for_classes = np.random.multinomial(n=sample_shape[0], pvals=self.gmm_components_weight)
+        points = []  
+        for component_index, num in enumerate(num_for_classes):  
+            points.append(self.normals[component_index].sample((num,)))  
+        return torch.FloatTensor(np.concatenate(points)).to(self.device) 
 
 
 class GMM2Gauss:  
@@ -141,6 +160,6 @@ if __name__ == '__main__':
     gmm_components_weight = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_components_weights.npy')
     gmm_mean = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_mean.npy')
     gmm_cov = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_cov.npy')
-    zdist = get_zdist(dist_name='gmm2gauss', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
-    sample = zdist.sample((16,),use_gmm=False)
+    zdist = get_zdist(dist_name='gmm', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
+    sample = zdist.sample((16,))
     print('sample shape: ', sample.shape)
