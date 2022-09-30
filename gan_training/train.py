@@ -144,8 +144,8 @@ class TrainerClassInterpolate(object):
         self.contract_lam = contract_lam
         self.l2loss = torch.nn.MSELoss()
 
-    def generator_trainstep(self, y, z):
-        assert(y.size(0) == z.size(0))
+    def generator_trainstep(self, y, z1, z2):
+        assert(y.size(0) == z1.size(0))
         toggle_grad(self.generator, True)
         if self.frozen_generator:
             toggle_grad(self.generator, False, parameters_list=self.frozen_generator_param_list)
@@ -155,10 +155,10 @@ class TrainerClassInterpolate(object):
         self.g_optimizer.zero_grad()
         temp_prob = torch.rand(1)
         if temp_prob < self.mix_prob:
-            x_mix, y_shuffle, lam = self.generator(z, y, True)
+            x_mix, y_shuffle, lam = self.generator(z1, y, z2, True)
             d_fake, _ = self.discriminator(x_mix, y, True, y_shuffle, lam)
         else:
-            x_fake = self.generator(z, y, interpolate=False)
+            x_fake = self.generator(z1, y, interpolate=False)
             d_fake, _ = self.discriminator(x_fake, y)
         gloss = self.compute_loss(d_fake, 1)
         gloss.backward()
@@ -166,7 +166,7 @@ class TrainerClassInterpolate(object):
 
         return gloss.item()
 
-    def discriminator_trainstep(self, x_real, y, z):
+    def discriminator_trainstep(self, x_real, y, z1, z2):
         toggle_grad(self.generator, False)
         toggle_grad(self.discriminator, True)
         if self.frozen_discriminator:
@@ -192,11 +192,11 @@ class TrainerClassInterpolate(object):
         temp_prob = torch.rand(1)
         with torch.no_grad():
             if temp_prob < self.mix_prob:
-                x_fake, y_shuffle, lam = self.generator(z, y, True)
-                x_fake1 = self.generator(z, y)
-                x_fake2 = self.generator(z, y_shuffle)
+                x_fake, y_shuffle, lam = self.generator(z1, y, z2, True)
+                x_fake1 = self.generator(z1, y)
+                x_fake2 = self.generator(z2, y_shuffle)
             else:
-                x_fake = self.generator(z, y, interpolate=False)
+                x_fake = self.generator(z1, y, interpolate=False)
         x_fake.requires_grad_()
         if temp_prob < self.mix_prob:
             x_fake1.requires_grad_()

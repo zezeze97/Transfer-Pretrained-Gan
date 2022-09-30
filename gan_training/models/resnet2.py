@@ -111,9 +111,9 @@ class GeneratorInterpolate(nn.Module):
 
         self.conv_img = nn.Conv2d(nf, 3, 3, padding=1)
 
-    def forward(self, z, y, interpolate=False):
-        assert(z.size(0) == y.size(0))
-        batch_size = z.size(0)
+    def forward(self, z1, y, z2=None, interpolate=False):
+        assert(z1.size(0) == y.size(0))
+        batch_size = z1.size(0)
 
         if y.dtype is torch.int64:
             yembed = self.embedding(y)
@@ -129,9 +129,9 @@ class GeneratorInterpolate(nn.Module):
         yembed = yembed / torch.norm(yembed, p=2, dim=1, keepdim=True)
 
         if interpolate:
-            yz = lam * torch.cat([z, yembed], dim=1) + (1.0 - lam) * torch.cat([z, y_shuffle_embed], dim=1)
+            yz = lam * torch.cat([z1, yembed], dim=1) + (1.0 - lam) * torch.cat([z2, y_shuffle_embed], dim=1)
         else:
-            yz = torch.cat([z, yembed], dim=1)
+            yz = torch.cat([z1, yembed], dim=1)
         out = self.fc(yz)
         out = out.view(batch_size, 16*self.nf, self.s0, self.s0)
 
