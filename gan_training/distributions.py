@@ -98,7 +98,7 @@ class GMM2Gauss:
        self.gmm_cov = gmm_cov
        self.device = device
        self.dim = dim
-   def sample(self, sample_shape, use_gmm):
+   def sample(self, sample_shape, use_gmm=False):
         num_sample = sample_shape[0]
         if use_gmm:
             num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
