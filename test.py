@@ -108,19 +108,6 @@ if config['test']['use_model_average']:
 else:
     generator_test = generator
 
-# load mean and cov of latentvecs if neccessary
-if config['z_dist']['type'] == 'multivariate_normal':
-    mean_path = config['z_dist']['mean_path']
-    cov_path = config['z_dist']['cov_path']
-    mean = torch.FloatTensor(np.load(mean_path))
-    cov = torch.FloatTensor(np.load(cov_path))
-# load gmm parameters if neccessary
-if config['z_dist']['type'] == 'gmm':
-    gmm_components_weight = np.load(config['z_dist']['gmm_components_weight'])
-    gmm_mean = np.load(config['z_dist']['gmm_mean'])
-    gmm_cov = np.load(config['z_dist']['gmm_cov'])
-
-
 # Distributions
 ydist = get_ydist(nlabels, device=device)
 if config['z_dist']['type'] == 'gauss':
