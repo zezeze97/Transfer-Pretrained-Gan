@@ -78,7 +78,6 @@ out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
 change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
-max_epoch = config['training']['max_epoch']
 max_iter = config['training']['max_iter']
 # Create missing directories
 if not path.exists(out_dir):
@@ -324,13 +323,6 @@ while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
 
-    # decide wheather to use gmm when zdist type is gmm2gauss
-    if zdist_type == 'gmm2gauss':
-        if epoch_idx < max_epoch/2:
-            use_gmm = True
-        else:
-            use_gmm = False
-
     for x_real, y in train_loader:
         it += 1
         
@@ -346,8 +338,8 @@ while flag:
 
         # Discriminator updates
         if config['z_dist']['type'] == 'gmm2gauss':
-            z1 = zdist.sample((batch_size,), use_gmm)
-            z2 = zdist.sample((batch_size,), use_gmm)
+            z1 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
+            z2 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
         else:
             z1 = zdist.sample((batch_size,))
             z2 = zdist.sample((batch_size,))
@@ -359,8 +351,8 @@ while flag:
         # Generators updates
         if ((it + 1) % d_steps) == 0:
             if config['z_dist']['type'] == 'gmm2gauss':
-                z1 = zdist.sample((batch_size,), use_gmm)
-                z2 = zdist.sample((batch_size,), use_gmm)
+                z1 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
+                z2 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
             else:
                 z1 = zdist.sample((batch_size,))
                 z2 = zdist.sample((batch_size,))
@@ -391,7 +383,7 @@ while flag:
         if inception_every > 0 and ((it + 1) % inception_every) == 0:
             print('Computing inception score...')
             if config['z_dist']['type'] == 'gmm2gauss':
-                inception_mean, inception_std = evaluator.compute_inception_score(use_gmm)
+                inception_mean, inception_std = evaluator.compute_inception_score(cur_lamdba = it/max_iter)
             else:
                 inception_mean, inception_std = evaluator.compute_inception_score()
             logger.add('inception_score', 'mean', inception_mean, it=it)
@@ -402,7 +394,7 @@ while flag:
             print('Generating fake images to compute fid...')
             fid_fake_image_save_dir=os.path.join(out_dir, 'imgs','fid_fake_imgs')
             if config['z_dist']['type'] == 'gmm2gauss':
-                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, use_gmm=use_gmm)
+                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, cur_lamdba = it/max_iter)
             else:
                 evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
             print('Computiong fid...')
@@ -430,7 +422,6 @@ while flag:
 
             if (restart_every > 0 and t0 - tstart > restart_every):
                 exit(3)
-    if epoch_idx > max_epoch:
-        flag = False
+                
     if it > max_iter:
         flag = False

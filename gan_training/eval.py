@@ -17,12 +17,12 @@ class Evaluator(object):
         self.batch_size = batch_size
         self.device = device
 
-    def compute_inception_score(self, use_gmm=False):
+    def compute_inception_score(self, cur_lambda=1.0):
         self.generator.eval()
         imgs = []
         while(len(imgs) < self.inception_nsamples):
             if self.zdist_type == 'gmm2gauss':
-                ztest = self.zdist.sample((self.batch_size,),use_gmm)
+                ztest = self.zdist.sample((self.batch_size,), cur_lambda)
             else:
                 ztest = self.zdist.sample((self.batch_size,))
             ytest = self.ydist.sample((self.batch_size,))
@@ -43,7 +43,7 @@ class Evaluator(object):
         fid = calculate_fid_given_paths(paths, batch_size=self.batch_size, img_size=img_size, device=self.device, dims=2048, num_workers=1)
         return fid
 
-    def save_samples(self, sample_num, save_dir, use_gmm=False):
+    def save_samples(self, sample_num, save_dir, cur_lambda=1.0):
         self.generator.eval()
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -52,7 +52,7 @@ class Evaluator(object):
         flag = True
         while flag:
             if self.zdist_type == 'gmm2gauss':
-                z = self.zdist.sample((self.batch_size,), use_gmm)
+                z = self.zdist.sample((self.batch_size,), cur_lambda)
             else:
                 z = self.zdist.sample((self.batch_size,))
             y = self.ydist.sample((self.batch_size,))

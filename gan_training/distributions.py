@@ -98,19 +98,16 @@ class GMM2Gauss:
        self.gmm_cov = gmm_cov
        self.device = device
        self.dim = dim
-   def sample(self, sample_shape, use_gmm=False):
+   def sample(self, sample_shape, cur_lambda=1.0): # default standard gauss
         num_sample = sample_shape[0]
-        if use_gmm:
-            num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
-            points = []  
-            for component_index, num in enumerate(num_for_classes):  
-                mean = self.gmm_mean[component_index,:]
-                cov = self.gmm_cov[component_index,:,:]
-                points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
-            output = torch.FloatTensor(np.concatenate(points)).to(self.device) 
-        else:
-            sample = np.random.randn(num_sample, self.dim)
-            output = torch.FloatTensor(sample).to(self.device) 
+        num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
+        points = []  
+        for component_index, num in enumerate(num_for_classes):  
+            mean = (1 - cur_lambda) * self.gmm_mean[component_index,:]
+            cov = (1 - cur_lambda) * self.gmm_cov[component_index,:,:] + cur_lambda * np.identity(self.dim) 
+            points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
+        output = torch.FloatTensor(np.concatenate(points)).to(self.device) 
+        
         return output
 
 
@@ -160,6 +157,7 @@ if __name__ == '__main__':
     gmm_components_weight = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_components_weights.npy')
     gmm_mean = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_mean.npy')
     gmm_cov = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_cov.npy')
-    zdist = get_zdist(dist_name='gmm', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
-    sample = zdist.sample((16,))
+    zdist = get_zdist(dist_name='gmm2gauss', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
+    sample = zdist.sample((16,), cur_lambda = 0.8)
     print('sample shape: ', sample.shape)
+    print(sample.mean())
