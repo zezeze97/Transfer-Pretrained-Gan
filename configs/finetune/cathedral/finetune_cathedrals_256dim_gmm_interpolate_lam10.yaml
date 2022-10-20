@@ -44,9 +44,9 @@ training:
   mix_prob: 0.5
   contract_lam: 10.0
 test:
-  model_file: 'model.pt'
+  model_file: 'model_best.pt'
   batch_size: 32 
-  sample_size: 64 
+  sample_size: 16 
   sample_nrow: 8
   compute_inception: false
   compute_fid: true
