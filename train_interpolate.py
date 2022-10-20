@@ -338,25 +338,23 @@ while flag:
 
         # Discriminator updates
         if config['z_dist']['type'] == 'gmm2gauss':
-            z1 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
-            z2 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
+            z = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
         else:
-            z1 = zdist.sample((batch_size,))
-            z2 = zdist.sample((batch_size,))
-        dloss, reg = trainer.discriminator_trainstep(x_real, y, z1, z2)
+            z = zdist.sample((batch_size,))
+        dloss, reg, dloss_interpolate = trainer.discriminator_trainstep(x_real, y, z)
         d_scheduler.step()
         logger.add('losses', 'discriminator', dloss, it=it)
         logger.add('losses', 'regularizer', reg, it=it)
+        logger.add('losses', 'interpolate', dloss_interpolate, it=it)
+        
 
         # Generators updates
         if ((it + 1) % d_steps) == 0:
             if config['z_dist']['type'] == 'gmm2gauss':
-                z1 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
-                z2 = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
+                z = zdist.sample((batch_size,), cur_lamdba = it/max_iter)
             else:
-                z1 = zdist.sample((batch_size,))
-                z2 = zdist.sample((batch_size,))
-            gloss = trainer.generator_trainstep(y, z1, z2)
+                z = zdist.sample((batch_size,))
+            gloss = trainer.generator_trainstep(y, z)
             logger.add('losses', 'generator', gloss, it=it)
 
             if config['training']['take_model_average']:
@@ -367,8 +365,9 @@ while flag:
         g_loss_last = logger.get_last('losses', 'generator')
         d_loss_last = logger.get_last('losses', 'discriminator')
         d_reg_last = logger.get_last('losses', 'regularizer')
-        print('[epoch %0d, it %4d] g_loss = %.4f, d_loss = %.4f, reg=%.4f'
-              % (epoch_idx, it, g_loss_last, d_loss_last, d_reg_last))
+        d_interpolate_last = logger.get_last('losses', 'interpolate')
+        print('[epoch %0d, it %4d] g_loss = %.4f, d_loss = %.4f, reg=%.4f, interpolate=%.4f'
+              % (epoch_idx, it, g_loss_last, d_loss_last, d_reg_last, d_interpolate_last))
 
         # (i) Sample if necessary
         if (it % config['training']['sample_every']) == 0:
@@ -406,6 +405,7 @@ while flag:
             if fid < best_fid:
                 checkpoint_io.save('model_best.pt' , it=it)
                 best_fid = fid
+            print('Current best FID is: ', best_fid)
 
         # (iii) Backup if necessary
         if ((it + 1) % backup_every) == 0:

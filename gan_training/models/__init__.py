@@ -15,7 +15,7 @@ generator_dict = {
 discriminator_dict = {
     'resnet': resnet.Discriminator,
     'resnet2': resnet2.Discriminator,
-    'resnet2_interpolate': resnet2.DiscriminatorInterpolate,
+    'resnet2_interpolate': resnet2.Discriminator,
     'resnet3': resnet3.Discriminator,
     'resnet4': resnet4.Discriminator,
 }
