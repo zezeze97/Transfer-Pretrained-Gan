@@ -6,7 +6,7 @@ import copy
 import torch
 from torch import nn
 from gan_training import utils
-from gan_training.train import TrainerClassInterpolate, update_average
+from gan_training.train import TrainerClassInterpolate, TrainerClassInterpolateV2, update_average
 from gan_training.logger import Logger
 from gan_training.checkpoints import CheckpointIO
 from gan_training.inputs import get_dataset
@@ -51,6 +51,7 @@ parser = argparse.ArgumentParser(
     description='Train a GAN with different regularization strategies.'
 )
 parser.add_argument('config', type=str, help='Path to config file.')
+parser.add_argument('--useV2', action='store_true', default=False)
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
 
 args = parser.parse_args()
@@ -293,18 +294,32 @@ g_scheduler = build_lr_scheduler(g_optimizer, config, last_epoch=it)
 d_scheduler = build_lr_scheduler(d_optimizer, config, last_epoch=it)
 
 # Trainer
-trainer = TrainerClassInterpolate(
-    generator, discriminator, g_optimizer, d_optimizer,
-    gan_type=config['training']['gan_type'],
-    reg_type=config['training']['reg_type'],
-    reg_param=config['training']['reg_param'],
-    frozen_generator=config['training']['frozen_generator'],
-    frozen_discriminator=config['training']['frozen_discriminator'],
-    frozen_generator_param_list=config['training']['frozen_generator_param_list'],
-    frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list'],
-    mix_prob=config['training']['mix_prob'],
-    contract_lam = config['training']['contract_lam']
-)
+if args.useV2:
+    trainer = TrainerClassInterpolateV2(
+        generator, discriminator, g_optimizer, d_optimizer,
+        gan_type=config['training']['gan_type'],
+        reg_type=config['training']['reg_type'],
+        reg_param=config['training']['reg_param'],
+        frozen_generator=config['training']['frozen_generator'],
+        frozen_discriminator=config['training']['frozen_discriminator'],
+        frozen_generator_param_list=config['training']['frozen_generator_param_list'],
+        frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list'],
+        mix_prob=config['training']['mix_prob'],
+        contract_lam = config['training']['contract_lam']
+    )
+else:
+    trainer = TrainerClassInterpolate(
+        generator, discriminator, g_optimizer, d_optimizer,
+        gan_type=config['training']['gan_type'],
+        reg_type=config['training']['reg_type'],
+        reg_param=config['training']['reg_param'],
+        frozen_generator=config['training']['frozen_generator'],
+        frozen_discriminator=config['training']['frozen_discriminator'],
+        frozen_generator_param_list=config['training']['frozen_generator_param_list'],
+        frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list'],
+        mix_prob=config['training']['mix_prob'],
+        contract_lam = config['training']['contract_lam']
+    )
 
 # sample before training
 print('Creating init samples...')

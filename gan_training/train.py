@@ -259,6 +259,143 @@ class TrainerClassInterpolate(object):
         reg = (compute_grad2(d_out, x_interp).sqrt() - center).pow(2).mean()
 
         return reg
+    
+class TrainerClassInterpolateV2(object):
+    def __init__(self, generator, discriminator, g_optimizer, d_optimizer,
+                 gan_type, reg_type, reg_param, frozen_generator=False, frozen_discriminator=False, 
+                 frozen_generator_param_list=None, frozen_discriminator_param_list=None, mix_prob=0.5, contract_lam=0.1):
+        self.generator = generator
+        self.discriminator = discriminator
+        self.g_optimizer = g_optimizer
+        self.d_optimizer = d_optimizer
+
+        self.gan_type = gan_type
+        self.reg_type = reg_type
+        self.reg_param = reg_param
+        self.frozen_generator = frozen_generator
+        self.frozen_discriminator = frozen_discriminator
+        self.frozen_generator_param_list = frozen_generator_param_list
+        self.frozen_discriminator_param_list = frozen_discriminator_param_list
+        self.mix_prob = torch.tensor(mix_prob)
+        self.contract_lam = contract_lam
+        self.l2loss = torch.nn.MSELoss()
+
+    def generator_trainstep(self, y, z):
+        assert(y.size(0) == z.size(0))
+        toggle_grad(self.generator, True)
+        if self.frozen_generator:
+            toggle_grad(self.generator, False, parameters_list=self.frozen_generator_param_list)
+        toggle_grad(self.discriminator, False)
+        self.generator.train()
+        self.discriminator.train()
+        self.g_optimizer.zero_grad()
+        temp_prob = torch.rand(1)
+        if temp_prob < self.mix_prob:
+            x_mix, rand_index, lam = self.generator(z, y, interpolate=True)
+            d_fake, _ = self.discriminator(x_mix, y)
+        else:
+            x_fake = self.generator(z, y, interpolate=False)
+            d_fake, _ = self.discriminator(x_fake, y)
+        gloss = self.compute_loss(d_fake, 1)
+        gloss.backward()
+        self.g_optimizer.step()
+
+        return gloss.item()
+
+    def discriminator_trainstep(self, x_real, y, z):
+        toggle_grad(self.generator, False)
+        toggle_grad(self.discriminator, True)
+        if self.frozen_discriminator:
+            toggle_grad(self.discriminator, False, parameters_list=self.frozen_discriminator_param_list)
+        self.generator.train()
+        self.discriminator.train()
+        self.d_optimizer.zero_grad()
+
+        # On real data
+        x_real.requires_grad_()
+
+        d_real, _ = self.discriminator(x_real, y)
+        dloss_real = self.compute_loss(d_real, 1)
+
+        if self.reg_type == 'real' or self.reg_type == 'real_fake':
+            dloss_real.backward(retain_graph=True)
+            reg = self.reg_param * compute_grad2(d_real, x_real).mean()
+            reg.backward()
+        else:
+            dloss_real.backward()
+
+        # On fake data
+        temp_prob = torch.rand(1)
+        with torch.no_grad():
+            if temp_prob < self.mix_prob:
+                x_fake, rand_index, lam = self.generator(z, y, interpolate=True)
+                x_fake1 = self.generator(z, y)
+            else:
+                x_fake = self.generator(z, y, interpolate=False)
+        x_fake.requires_grad_()
+        if temp_prob < self.mix_prob:
+            d_fake, d_fake_mix_feature = self.discriminator(x_fake, y)
+            x_fake1.requires_grad_()
+            _, d_fake_feature1 = self.discriminator(x_fake1, y)
+            d_fake_feature2 = d_fake_feature1[rand_index,:]
+            dloss_fake = self.compute_loss(d_fake, 0)
+            dloss_contract = self.l2loss(d_fake_mix_feature, lam * d_fake_feature1 + (1.0 - lam) * d_fake_feature2)
+            dloss_fake = dloss_fake + self.contract_lam * dloss_contract
+        else:
+            d_fake, _ = self.discriminator(x_fake, y)
+            dloss_fake = self.compute_loss(d_fake, 0)
+            dloss_contract = torch.tensor(0.)
+
+
+        if self.reg_type == 'fake' or self.reg_type == 'real_fake':
+            dloss_fake.backward(retain_graph=True)
+            reg = self.reg_param * compute_grad2(d_fake, x_fake).mean()
+            reg.backward()
+        else:
+            dloss_fake.backward()
+
+        if self.reg_type == 'wgangp':
+            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake, y)
+            reg.backward()
+        elif self.reg_type == 'wgangp0':
+            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake, y, center=0.)
+            reg.backward()
+
+        self.d_optimizer.step()
+
+        toggle_grad(self.discriminator, False)
+
+        # Output
+        dloss = (dloss_real + dloss_fake)
+
+        if self.reg_type == 'none':
+            reg = torch.tensor(0.)
+    
+        return dloss.item(), reg.item(), dloss_contract.item()
+
+    def compute_loss(self, d_out, target):
+        targets = d_out.new_full(size=d_out.size(), fill_value=target)
+
+        if self.gan_type == 'standard':
+            loss = F.binary_cross_entropy_with_logits(d_out, targets)
+        elif self.gan_type == 'wgan':
+            loss = (2*target - 1) * d_out.mean()
+        else:
+            raise NotImplementedError
+
+        return loss
+
+    def wgan_gp_reg(self, x_real, x_fake, y, center=1.):
+        batch_size = y.size(0)
+        eps = torch.rand(batch_size, device=y.device).view(batch_size, 1, 1, 1)
+        x_interp = (1 - eps) * x_real + eps * x_fake
+        x_interp = x_interp.detach()
+        x_interp.requires_grad_()
+        d_out, _ = self.discriminator(x_interp, y)
+
+        reg = (compute_grad2(d_out, x_interp).sqrt() - center).pow(2).mean()
+
+        return reg
 
 
 class Learnable_GMM_Trainer(object):
