@@ -202,10 +202,7 @@ print('noise type: ', config['z_dist']['type'])
 ntest = batch_size
 x_real, ytest = utils.get_nsamples(train_loader, ntest)
 ytest.clamp_(None, nlabels-1)
-if config['z_dist']['type'] == 'gmm2gauss':
-    ztest = zdist.sample((ntest,), use_gmm=True)
-else:
-    ztest = zdist.sample((ntest,))
+ztest = zdist.sample((ntest,))
 utils.save_images(x_real, path.join(out_dir, 'real.png'))
 
 
@@ -324,13 +321,6 @@ while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
 
-    # decide wheather to use gmm when zdist type is gmm2gauss
-    if zdist_type == 'gmm2gauss':
-        if epoch_idx < max_epoch/2:
-            use_gmm = True
-        else:
-            use_gmm = False
-
     for x_real, y in train_loader:
         it += 1
         
@@ -346,7 +336,9 @@ while flag:
 
         # Discriminator updates
         if config['z_dist']['type'] == 'gmm2gauss':
-            z = zdist.sample((batch_size,), use_gmm)
+            cur_lambda=it/max_iter
+            print('cur_lambda', cur_lambda)
+            z = zdist.sample((batch_size,), cur_lambda=it/max_iter)
         else:
             z = zdist.sample((batch_size,))
         dloss, reg = trainer.discriminator_trainstep(x_real, y, z)
@@ -357,7 +349,7 @@ while flag:
         # Generators updates
         if ((it + 1) % d_steps) == 0:
             if config['z_dist']['type'] == 'gmm2gauss':
-                z = zdist.sample((batch_size,), use_gmm)
+                z = zdist.sample((batch_size,), cur_lambda=it/max_iter)
             else:
                 z = zdist.sample((batch_size,))
             gloss, clsloss, bssloss = trainer.generator_trainstep(y, z)
@@ -371,10 +363,11 @@ while flag:
         g_scheduler.step()
         # Print stats
         g_loss_last = logger.get_last('losses', 'generator')
+        bss_loss_last = logger.get_last('bss_loss', 'generator')
         d_loss_last = logger.get_last('losses', 'discriminator')
         d_reg_last = logger.get_last('losses', 'regularizer')
-        print('[epoch %0d, it %4d] g_loss = %.4f, d_loss = %.4f, reg=%.4f'
-              % (epoch_idx, it, g_loss_last, d_loss_last, d_reg_last))
+        print('[epoch %0d, it %4d] g_loss = %.4f, bss_loss = %.4f,d_loss = %.4f, reg=%.4f'
+              % (epoch_idx, it, g_loss_last, bss_loss_last, d_loss_last, d_reg_last))
 
         # (i) Sample if necessary
         if (it % config['training']['sample_every']) == 0:
@@ -389,7 +382,7 @@ while flag:
         if inception_every > 0 and ((it + 1) % inception_every) == 0:
             print('Computing inception score...')
             if config['z_dist']['type'] == 'gmm2gauss':
-                inception_mean, inception_std = evaluator.compute_inception_score(use_gmm)
+                inception_mean, inception_std = evaluator.compute_inception_score(cur_lambda=it/max_iter)
             else:
                 inception_mean, inception_std = evaluator.compute_inception_score()
             logger.add('inception_score', 'mean', inception_mean, it=it)
@@ -400,7 +393,7 @@ while flag:
             print('Generating fake images to compute fid...')
             fid_fake_image_save_dir=os.path.join(out_dir, 'imgs','fid_fake_imgs')
             if config['z_dist']['type'] == 'gmm2gauss':
-                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, use_gmm=use_gmm)
+                evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir, cur_lambda=it/max_iter)
             else:
                 evaluator.save_samples(sample_num=fid_fake_imgs_num, save_dir=fid_fake_image_save_dir)
             print('Computiong fid...')
