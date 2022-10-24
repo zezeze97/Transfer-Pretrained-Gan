@@ -32,7 +32,7 @@ training:
   generator_pretrained_ckpt_file: output/vec2img/pets_sub1000_256dim_special_init/chkpts/generator.pth
   discriminator_pretrained_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
   finetune: true
-  out_dir: output/finetune/pets_sub1000_256dim_gauss
+  out_dir: output/finetune/pets_sub1000_256dim_gmm
   inception_every: -1
   fid_every: 1000
   fid_fake_imgs_num: 1000
