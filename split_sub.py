@@ -3,8 +3,8 @@ import shutil
 import random
 
 num_of_sample = 1000
-image_root_path = 'data/cityscapes/0'
-dst_root_path = 'data/cityscapes_sub1000/0'
+image_root_path = 'data/Oxford-IIIT-Pet/0'
+dst_root_path = 'data/Pet-Sub-1000/0'
 all_image_list = os.listdir(image_root_path)
 sample_image_list = random.sample(all_image_list, num_of_sample)
 

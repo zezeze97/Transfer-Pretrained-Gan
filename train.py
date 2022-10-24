@@ -400,6 +400,7 @@ while flag:
             if fid < best_fid:
                 checkpoint_io.save('model_best.pt' , it=it)
                 best_fid = fid
+            print('Current best FID is: ', best_fid)
 
         # (iii) Backup if necessary
         if ((it + 1) % backup_every) == 0:
