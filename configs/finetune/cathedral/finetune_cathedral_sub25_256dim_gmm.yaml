@@ -43,7 +43,7 @@ training:
   max_epoch: 60000
 test:
   model_file: 'model_best.pt'
-  batch_size: 25 
+  batch_size: 16 
   sample_size: 64 
   sample_nrow: 8
   compute_inception: false

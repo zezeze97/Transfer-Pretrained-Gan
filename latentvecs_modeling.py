@@ -49,7 +49,7 @@ def main(method, prefix):
         print("best num of components is ", best_n_components," aic is ", best_aic)
         
         '''
-        best_n_components = 3
+        best_n_components = 5
         model = mixture.GaussianMixture(n_components=best_n_components, covariance_type='full', verbose=2, verbose_interval=1)
         gm = model.fit(latent_vecs)
         np.save(prefix+'/gmm_components_weights_components.npy', gm.weights_)
