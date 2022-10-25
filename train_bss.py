@@ -423,7 +423,5 @@ while flag:
 
             if (restart_every > 0 and t0 - tstart > restart_every):
                 exit(3)
-    if epoch_idx > max_epoch:
-        flag = False
     if it > max_iter:
         flag = False
