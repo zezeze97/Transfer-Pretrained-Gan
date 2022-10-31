@@ -735,7 +735,7 @@ class Trainer_BSS(object):
 
         x_fake.requires_grad_()
         d_fake, d_fake_feature = self.discriminator(x_fake, y)
-        dloss_fake = self.compute_loss(d_fake, 0) # + self.bss_loss_lambda * self.bss_loss_fun(d_fake_feature)
+        dloss_fake = self.compute_loss(d_fake, 0) + self.bss_loss_lambda * self.bss_loss_fun(d_fake_feature)
 
         if self.reg_type == 'fake' or self.reg_type == 'real_fake':
             dloss_fake.backward(retain_graph=True)
