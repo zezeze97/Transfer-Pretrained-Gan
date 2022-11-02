@@ -1,0 +1,46 @@
+data:
+  type: image
+  train_dir: data/Flowers_1000_sub
+  test_dir: data/Flowers
+  lsun_categories_train: null
+  lsun_categories_test: null
+  img_size: 128
+  nlabels: 1
+generator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+discriminator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+z_dist:
+  type: gauss
+  dim: 256
+training:
+  batch_size: 32
+  change_generator_embedding_layer: true
+  change_discriminator_fc_layer: true
+  pretrain_ckpt_file: ./pretrained_ckpt/imagenet/imagenet-8c505f47.pt
+  finetune: true
+  out_dir: output/finetune/flowers_sub1000_gauss_freezeD
+  inception_every: -1
+  fid_every: 1000
+  fid_fake_imgs_num: 8000
+  lr_g: 0.000025
+  lr_d: 0.000025
+  frozen_discriminator: true
+  frozen_discriminator_param_list: ['conv_img.weight', 'conv_img.bias', 'resnet_0_0.conv_0.weight', 'resnet_0_0.conv_0.bias', 'resnet_0_0.conv_1.weight', 'resnet_0_0.conv_1.bias', 'resnet_0_1.conv_0.weight', 'resnet_0_1.conv_0.bias', 'resnet_0_1.conv_1.weight', 'resnet_0_1.conv_1.bias', 'resnet_0_1.conv_s.weight','resnet_1_0.conv_0.weight', 'resnet_1_0.conv_0.bias', 'resnet_1_0.conv_1.weight', 'resnet_1_0.conv_1.bias', 'resnet_1_1.conv_0.weight', 'resnet_1_1.conv_0.bias', 'resnet_1_1.conv_1.weight', 'resnet_1_1.conv_1.bias', 'resnet_1_1.conv_s.weight', 'resnet_2_0.conv_0.weight', 'resnet_2_0.conv_0.bias', 'resnet_2_0.conv_1.weight', 'resnet_2_0.conv_1.bias', 'resnet_2_1.conv_0.weight', 'resnet_2_1.conv_0.bias', 'resnet_2_1.conv_1.weight', 'resnet_2_1.conv_1.bias', 'resnet_2_1.conv_s.weight']
+  max_iter: 60000
+test:
+  model_file: 'model_best.pt'
+  batch_size: 32 
+  sample_size: 64 
+  sample_nrow: 8
+  compute_inception: false
+  compute_fid: true
+  fid_fake_imgs_num: 8000
