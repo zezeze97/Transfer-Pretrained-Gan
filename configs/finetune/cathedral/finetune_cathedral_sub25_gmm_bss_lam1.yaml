@@ -44,6 +44,7 @@ training:
   reg_type: real_fake
   reg_param: 20.0
   max_iter: 60000
+  vis_spectrum_every: 500
 test:
   model_file: 'model_best.pt'
   batch_size: 16 

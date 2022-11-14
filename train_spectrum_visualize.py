@@ -364,7 +364,31 @@ while flag:
         d_reg_last = logger.get_last('losses', 'regularizer')
         print('[epoch %0d, it %4d] g_loss = %.4f, d_loss = %.4f, reg=%.4f'
               % (epoch_idx, it, g_loss_last, d_loss_last, d_reg_last))
-
+        
+        
+        # visualize spectrum is neccesary
+        if (it  % config['training']['vis_spectrum_every']) == 0:
+            print('visualizing spectrum...')
+            features = []
+            generator.eval()
+            discriminator.eval()
+            with torch.no_grad():
+                for i in range(100):
+                    z = zdist.sample((1,))
+                    y = ydist.sample((1,))
+                    fake_img = generator(z, y)
+                    logits, feature = discriminator(fake_img, y)
+                    features.append(feature)
+            features = torch.concat(features, dim=0)
+            u,s,v = torch.svd(features)
+            total_index = s.shape[0]
+            theSum = torch.sum(s)
+            for i in range(total_index, 0, -1):
+                # print(i, torch.sum(s[:i]) / theSum)
+                if (torch.sum(s[:i]) / theSum) < 1. - 0.05:
+                    print('[it%4d, approximate rank is %4d]' % (it,i+1))
+                    logger.add('approximate rank', 'score', i+1, it=it)
+                    break
         # (i) Sample if necessary
         if (it % config['training']['sample_every']) == 0:
             print('Creating samples...')
@@ -403,21 +427,6 @@ while flag:
                 best_fid = fid
             print('Current best FID is: ', best_fid)
         
-        # visualize spectrum is neccesary
-        if (it  % config['training']['vis_spectrum_every']) == 0:
-            print('visualize spectrum')
-            with torch.no_grad():
-                u,s,v = torch.svd(d_feature)
-            s = s.detach().cpu().numpy()
-            x = [i for i in range(1, 11)]
-            fig = plt.figure(dpi=150)
-            plt.plot(x, s[-10:])
-            plt.title('Spectrum')
-            plt.xlabel('Index')
-            plt.ylabel('Singular values')
-            plt.savefig(os.path.join(out_dir, 'imgs/Spectrum_of_it%0d.png' % it))
-            
-
         # (iii) Backup if necessary
         if ((it + 1) % backup_every) == 0:
             print('Saving backup...')
