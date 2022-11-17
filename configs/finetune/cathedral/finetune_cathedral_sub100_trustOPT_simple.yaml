@@ -21,7 +21,7 @@ discriminator:
 z_dist:
   type: gmm
   dim: 256
-  gmm_components_weight: output/vec2img/cathedral_sub100/gmm_components_weights_components.npy
+  gmm_components_weight: output/vec2img/cathedral_sub100/gmm_components_weights.npy
   gmm_mean: output/vec2img/cathedral_sub100/gmm_mean.npy
   gmm_cov: output/vec2img/cathedral_sub100/gmm_cov.npy
 training:
