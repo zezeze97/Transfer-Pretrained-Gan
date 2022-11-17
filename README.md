@@ -51,7 +51,7 @@
 
     # trustOPT
     python train.py {Path of trustOPT finetuning config}
-    # eg: python train.py configs/finetune/cathedral/finetune_cathedral_trustOPT.yaml
+    # eg: python train.py configs/finetune/cathedral/finetune_cathedral_sub1000_trustOPT.yaml
 
     # BSD
     python train_bsd.py {Path of BSD finetuning config}
