@@ -1,87 +1,62 @@
-# 预训练模型
-- [lsun_bedroom](https://s3.eu-central-1.amazonaws.com/avg-projects/gan_stability/models/lsun_bedroom-df4e7dd2.pt): 256*256
-- [imagenet](https://s3.eu-central-1.amazonaws.com/avg-projects/gan_stability/models/imagenet-8c505f47.pt): 128*128
-  
-    对应的预训练模型config在[configs/pretrained](configs/pretrained)中
+# Overcoming Catastrophic Forgetting for Fine-tuning Pre-trained GANs
+  Pytorch implement of Overcoming Catastrophic Forgetting for Fine-tuning Pre-trained GANs.
+  ![image](imgs/pipline.png)
 
-# 数据集准备
-    ```
-        ├──data
-            ├── cars1000cls5
-            ├── cars_1000_sub
-            ├── carscls5
-            ├── cars_train
-            ├── cathedral
-            ├── cathedral_1000_sub
-            ├── cathedral_25_sub
-            ├── cityscapes
-            ├── Flower25_cls5
-            ├── Flowers
-            ├── Flowers_1000_sub
-            ├── Flowers_1000_sub_cls
-            ├── Flowers_1000_sub_cls4
-            ├── Flowers_25
-            ├── Flowers251
-            ├── Flowers_class
-            ├── Flowers_cls
-            ├── Imagenet
-            ├── imagenet_fake_data
-            ├── LSUN
-            └── Oxford-IIIT-Pet
-    ```
-
-# 图片聚类
-  在需要进行多类别(nlabels > 1)训练时，需要提前离线进行图片聚类
-
+# Requirement
+  We mainly develop this project based on torch1.10.1+cu113, and you can use the following command to install environment dependencies.
   ```
-  python image_cluster.py --data_path {Path to data} --n_clusters {Num of clusters} --output_dir {Path to save clustering result}
+  pip install -r requirements.txt
   ```
 
 
-# 隐向量寻找
-  隐向量寻找的config放在[configs/vec2img](configs/vec2img)中
+# Data Prepare
+  Download Flowers, Cathedral, Pets dataset to `./data/`.
 
-    ```
-    python vec2img.py {path of vec2img config}
-    eg: python vec2img.py configs/vec2img/flowers/vec2img_flowers25_cls5_special_class_embedding.yaml
-    ```
+  Flowers: https://www.robots.ox.ac.uk/~vgg/data/flowers/102/
 
-# 隐空间建模
- 将所有Finetuning相关的模型config放在[configs/finetune](configs/finetune)中的prefix，再进行gmm建模
+  Cathedral(subset of places205): http://places.csail.mit.edu/downloadData.html
 
+  Pets: https://www.robots.ox.ac.uk/~vgg/data/pets/
+
+  We select 1000, 100 and 25 samples from these datasets respectively to build new subsets, namely Flowers-1K, Flowers-100, Flowers-25, Cathedral-1K, Cathedral-100, Cathedral-25, Pets-1K, Pets-100 and Pets-25. All these subsets consist of randomly selected samples, except Flowers-25 for which we choose the first 25 passion flower images from the Flowers dataset.
+
+
+# Computing Optimal Latent Vectors.
+  We use optimization-based methods to find hidden vectors for each image in the target dataset. Specifically, the Vec2Img method is used to calculate the L2 loss of the generated image and the target image. Since the pre-trained GAN belongs to cGAN and contains the class embedding on the ImageNet data, we use resnet50 as the classifier to calculate the distribution of the target dataset in the pre-training category, and calculate the weighted sum of the pre-trained class embeddings as a new class embeddings for the target data.
+
+      ```
+      # First compute class embeding of the target data
+      python compute_class_embedding.py --config {Path of vec2img config}
+      # eg: python compute_class_embedding.py --config configs/vec2img/flowers/vec2img_flowers_sub100.yaml, result will be saved in output/flowers_sub100.
+
+      # Then compute latent vectors of target data
+      python vec2img.py {Path of vec2img config}
+      # eg: python vec2img.py configs/vec2img/flowers/vec2img_flowers_sub100.yaml, result will be saved in output/vec2img/flowers_sub100
+      ```
+
+# Latent Space Modeling
+ After calculating the hidden vector of the target dataset, it can be modeled using GMM as a priori distribution. The number of GMM components is set to 5 for the full, 1000 and 100-sample dataset experiments and 3 for the 25-sample dataset.
  ```
- python latentvecs_modeling.py
+ python latentvecs_modeling.py --prefix {Root path of latentvecs} --components_num {Number of GMM components}
+ # eg: python latentvecs_modeling.py --prefix output/vec2img/flowers_sub100 --components_num 5
  ```
 
 # Finetuning
+  Finally, we can fine-tuning the target dataset using our proposed methods such as trustOPT-, trustOPT, BSD, etc.
+
     ```
-    # 单类别/多类别 gmm/gauss/shift gauss/kde
-    python train.py {Path of finetuning config}
+    # trustOPT-
+    python train.py {Path of trustOPT- finetuning config}
+    # eg: python train.py configs/finetune/flowers/finetune_flowers_sub100_trustOPT_simple.yaml
 
-    # learnable gmm
-    python train_learnable_gmm.py {Path of finetuning config}
+    # trustOPT
+    python train.py {Path of trustOPT finetuning config}
+    # eg: python train.py configs/finetune/cathedral/finetune_cathedral_trustOPT.yaml
 
-    # class interpolate + contrast loss
-    python train_class_interpolate.py {Path of finetuning config}
-
-    # bss loss
-    python train_bss.py {Path of finetuning config}
-
-    # auxiliary sample + mmd loss
-    python train_limited_data.py {Path of finetuning config}
-
-    # tensorboard 可视化
-    tensorborad --logdir {Path of output dir}
-    ```
-
-# 计算fid
-  通常来说，看训练过程中的fid曲线即可，如果要测试，可使用如下命令
-  
-    ```
-    # 不在imagenet上测试
-    python test.py --config {Path of finetuning config}
-
-    # 在imagenet上测试
-    python test.py --config {Path of finetuning config} --test_imagenet --pretrained_ckpt_path {Path to pretrained ckpt if need to test imagenet} --imagenet_path {Path to imagenet}  
+    # BSD
+    python train_bsd.py {Path of BSD finetuning config}
+    # eg: python train_bsd.py configs/finetune/flowers/finetune_flowers_sub100_BSD.yaml
     
+    # tensorboard visualization
+    tensorborad --logdir {Path of output dir}
     ```

@@ -86,9 +86,9 @@ class GMM2Gauss:
         num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
         points = []  
         for component_index, num in enumerate(num_for_classes):  
-            mean = (1 - cur_lambda) * self.gmm_mean[component_index,:]
-            cov = (1 - cur_lambda) * self.gmm_cov[component_index,:,:] + cur_lambda * np.identity(self.dim) 
-            points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
+            mean = (1.0 - cur_lambda) * self.gmm_mean[component_index,:]
+            cov = (1.0 - cur_lambda) * self.gmm_cov[component_index,:,:] + cur_lambda * np.identity(self.dim)
+            points.append(np.random.default_rng().multivariate_normal(mean=mean, cov=cov,size=num, method='eigh'))  
         output = torch.FloatTensor(np.concatenate(points)).to(self.device) 
         
         return output

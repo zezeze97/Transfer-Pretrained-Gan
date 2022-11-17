@@ -77,7 +77,6 @@ out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
 change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
-max_epoch = config['training']['max_epoch']
 max_iter = config['training']['max_iter']
 # Create missing directories
 if not path.exists(out_dir):
@@ -337,7 +336,7 @@ while flag:
         g_scheduler.step()
         # Print stats
         g_loss_last = logger.get_last('losses', 'generator')
-        bsd_loss_last = logger.get_last('bss_loss', 'generator')
+        bsd_loss_last = logger.get_last('bsd_loss', 'generator')
         d_loss_last = logger.get_last('losses', 'discriminator')
         d_reg_last = logger.get_last('losses', 'regularizer')
         print('[epoch %0d, it %4d] g_loss = %.4f, bsd_loss = %.4f,d_loss = %.4f, reg=%.4f'
