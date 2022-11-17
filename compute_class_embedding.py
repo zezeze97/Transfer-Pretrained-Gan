@@ -4,7 +4,7 @@ from os import path
 import torch
 from torch import nn
 from gan_training.inputs import get_dataset
-from gan_training.config import load_config, build_generator, build_im2latent
+from gan_training.config import load_config, build_generator
 from gan_training.distributions import get_ydist, get_zdist
 from collections import OrderedDict
 import torchvision
@@ -94,7 +94,7 @@ label_encoder = label_encoder.to(device)
 pretrained_ckpt = config['training']['pretrain_ckpt_file']
 loaded_dict = torch.load(pretrained_ckpt)
 print('Loading pretrained generator...')
-generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict['generator']))
+generator.load_state_dict(remove_module_str_in_state_dict(loaded_dict))
 print('Pretrained generator loaded!')
 
 
@@ -148,7 +148,7 @@ label_embedding_np = label_embedding.detach().cpu().numpy()
 np.save(out_dir + '/class_embedding/class_embedding.npy', label_embedding_np)
 
 # visualize currrent label embedding
-zdist = get_zdist(dist_name=config['z_dist']['type'],dim=config['z_dist']['dim'], device=device)
+zdist = get_zdist(dist_name='gauss',dim=config['z_dist']['dim'], device=device)
 
 z = zdist.sample((batch_size,))
 with torch.no_grad():         

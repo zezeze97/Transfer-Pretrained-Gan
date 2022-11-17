@@ -1,0 +1,58 @@
+data:
+  type: image
+  train_dir: data/Flowers_25
+  test_dir: data/Flowers251
+  lsun_categories_train: null
+  lsun_categories_test: null
+  img_size: 128
+  nlabels: 1
+generator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+discriminator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+    extract_feature: true
+z_dist:
+  type: gmm
+  dim: 256
+  gmm_components_weight: output/vec2img/flowers25/gmm_components_weights.npy
+  gmm_mean: output/vec2img/flowers25/gmm_components_weights.npy
+  gmm_cov: output/vec2img/flowers25/gmm_components_weights.npy
+training:
+  batch_size: 16
+  finetune: true
+  change_generator_embedding_layer: true
+  change_discriminator_fc_layer: true
+  pretrain_ckpt_file: null
+  generator_pretrained_ckpt_file: pretrained_ckpt/ImageNetPre_generator.pt
+  generator_class_embedding: output/vec2img/flowers25/chkpts/generator_class_embedding.pt
+  discriminator_pretrained_ckpt_file: pretrained_ckpt/ImageNetPre_discriminator.pt
+  out_dir: output/finetune/flowers_sub25_BSD
+  inception_every: -1
+  inception_every: -1
+  fid_every: 1000
+  sample_every: 1000
+  fid_fake_imgs_num: 251
+  bss_lambda: 1.0
+  bss_num_of_index: 10
+  lr_g: 0.000025
+  lr_d: 0.000025
+  reg_type: real_fake
+  reg_param: 20.0
+  max_epoch: 60000
+  save_every: 1000
+test:
+  model_file: 'model_best.pt'
+  batch_size: 16 
+  sample_size: 64 
+  sample_nrow: 8
+  compute_inception: false
+  compute_fid: true
+  fid_fake_imgs_num: 251

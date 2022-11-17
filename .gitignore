@@ -1,9 +1,11 @@
 output
+output_old
 data
 *_lmdb
 __pycache__
 *.pyc
 pretrained_ckpt
-_cache_dataLSUNbedroomtrainlmdb
-_cache_dataLSUNkitchentrainlmdb
 .vscode
+configs/finetune/cathedral_old/
+configs/finetune/flowers_old/
+configs/finetune/pets_old/

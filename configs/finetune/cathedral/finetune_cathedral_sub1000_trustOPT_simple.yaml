@@ -1,0 +1,50 @@
+data:
+  type: image
+  train_dir: data/cathedral_1000_sub
+  test_dir: data/cathedral
+  lsun_categories_train: null
+  lsun_categories_test: null
+  img_size: 128
+  nlabels: 1
+generator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+discriminator:
+  name: resnet2
+  kwargs:
+    nfilter: 64
+    nfilter_max: 1024
+    embed_size: 256
+z_dist:
+  type: gmm
+  dim: 256
+  gmm_components_weight: output/vec2img/cathedral_sub1000/gmm_components_weights_components.npy
+  gmm_mean: output/vec2img/cathedral_sub1000/gmm_mean.npy
+  gmm_cov: output/vec2img/cathedral_sub1000/gmm_cov.npy
+training:
+  batch_size: 32
+  finetune: true
+  change_generator_embedding_layer: true
+  change_discriminator_fc_layer: true
+  pretrain_ckpt_file: null
+  generator_pretrained_ckpt_file: pretrained_ckpt/ImageNetPre_generator.pt
+  generator_class_embedding: output/vec2img/cathedral_sub1000/chkpts/generator_class_embedding.pt
+  discriminator_pretrained_ckpt_file: pretrained_ckpt/ImageNetPre_discriminator.pt
+  out_dir: output/finetune/cathedral_sub1000_trustOPT_simple
+  inception_every: -1
+  fid_every: 1000
+  fid_fake_imgs_num: 8000
+  lr_g: 0.000025
+  lr_d: 0.000025
+  max_iter: 60000
+test:
+  model_file: 'model_best.pt'
+  batch_size: 32 
+  sample_size: 64 
+  sample_nrow: 8
+  compute_inception: false
+  compute_fid: true
+  fid_fake_imgs_num: 8000

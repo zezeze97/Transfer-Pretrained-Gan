@@ -4,19 +4,11 @@ from sklearn import mixture
 from scipy.stats import normaltest
 import matplotlib.pyplot as plt
 
-def main(method, prefix):
+def main(method, prefix, best_n_components):
     
     # latentvec_dir = 'outputs/generate_results/im2latent_save_dir_v2/latentvecs/'
-    latentvec_dir = prefix + '/latentvecs/'
-
-    # load latent vectors npy file
-    for i,filename in enumerate(os.listdir(latentvec_dir)):
-        if i == 0:
-            latent_vecs = np.load(latentvec_dir + filename)
-        else:
-            current_vecs = np.load(latentvec_dir + filename)
-            latent_vecs = np.concatenate((current_vecs,latent_vecs),axis=0)
-
+    latentvec_dir = prefix + '/latentvecs/latentvecs.npy'
+    latent_vecs = np.load(latentvec_dir)
     print('latentvecs shape: ', latent_vecs.shape)
     if method == 'shift gauss':
         # compute mean and cov of latent_vecs
@@ -31,28 +23,10 @@ def main(method, prefix):
         print('var',np.mean(cov.diagonal()))
     
     if method == 'gauss mixture':
-       
-        '''
-        # select best gmm model
-        aic_list = []
-        best_aic = np.infty
-        best_n_components = 0
-        for n_components in range(1,11):
-            model = mixture.GaussianMixture(n_components=n_components, covariance_type='full', verbose=2, verbose_interval=1)
-            gm = model.fit(latent_vecs)
-            aic = model.aic(latent_vecs)
-            print('the aic of ',n_components,' is ', aic)
-            aic_list.append(aic)
-            if aic < best_aic:
-                best_aic = aic
-                best_n_components = n_components
-        print("best num of components is ", best_n_components," aic is ", best_aic)
-        
-        '''
-        best_n_components = 5
+        # best_n_components = 5
         model = mixture.GaussianMixture(n_components=best_n_components, covariance_type='full', verbose=2, verbose_interval=1)
         gm = model.fit(latent_vecs)
-        np.save(prefix+'/gmm_components_weights_components.npy', gm.weights_)
+        np.save(prefix+'/gmm_components_weights.npy', gm.weights_)
         np.save(prefix+'/gmm_mean.npy', gm.means_)
         np.save(prefix+'/gmm_cov.npy', gm.covariances_)
     if method == 'normal test':
@@ -76,6 +50,17 @@ def main(method, prefix):
 
 
 if __name__  == '__main__':
-    prefix = 'output/vec2img/cathedral_sub25_256dim_special_init_fix'
+    import argparse
+    # Arguments
+    parser = argparse.ArgumentParser(
+        description='Modeling the latent vectors.'
+    )
+    parser.add_argument('--prefix', type=str, help='Path to vec2img root dir.')
+    parser.add_argument('--components_num', type=int, help='Number of components in GMM.')
+    
+
+    args = parser.parse_args()
+    prefix = args.prefix
+    best_n_components = args.components_num
     method = 'gauss mixture'
-    main(method, prefix)
+    main(method, prefix, best_n_components)

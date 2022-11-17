@@ -36,7 +36,7 @@ training:
   inception_every: -1 
   fid_every: -1
   fid_fake_imgs_num: 60000
-  save_every: 900
+  save_every: 1000
   backup_every: 100000
   restart_every: -1
   optimizer: rmsprop
@@ -47,9 +47,7 @@ training:
   d_steps: 1
   equalize_lr: false
   model_file: model.pt
-  max_epoch: 70
   max_iter: 60000
-  special_class_embedding: null
   frozen_generator: false
   frozen_discriminator: false
   frozen_generator_param_list: null

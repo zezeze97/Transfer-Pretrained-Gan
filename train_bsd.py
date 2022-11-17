@@ -6,7 +6,7 @@ import copy
 import torch
 from torch import nn
 from gan_training import utils
-from gan_training.train import Trainer, update_average
+from gan_training.train import Trainer_BSD, update_average
 from gan_training.logger import Logger
 from gan_training.checkpoints import CheckpointIO
 from gan_training.inputs import get_dataset
@@ -77,6 +77,7 @@ out_dir = config['training']['out_dir']
 checkpoint_dir = path.join(out_dir, 'chkpts')
 change_generator_embedding_layer = config['training']['change_generator_embedding_layer']
 change_discriminator_fc_layer = config['training']['change_discriminator_fc_layer']
+max_epoch = config['training']['max_epoch']
 max_iter = config['training']['max_iter']
 # Create missing directories
 if not path.exists(out_dir):
@@ -264,7 +265,7 @@ g_scheduler = build_lr_scheduler(g_optimizer, config, last_epoch=it)
 d_scheduler = build_lr_scheduler(d_optimizer, config, last_epoch=it)
 
 # Trainer
-trainer = Trainer(
+trainer = Trainer_BSD(
     generator, discriminator, g_optimizer, d_optimizer,
     gan_type=config['training']['gan_type'],
     reg_type=config['training']['reg_type'],
@@ -272,7 +273,9 @@ trainer = Trainer(
     frozen_generator=config['training']['frozen_generator'],
     frozen_discriminator=config['training']['frozen_discriminator'],
     frozen_generator_param_list=config['training']['frozen_generator_param_list'],
-    frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list']
+    frozen_discriminator_param_list=config['training']['frozen_discriminator_param_list'],
+    bsd_loss_lambda=config['training']['bsd_lambda'],
+    bsd_num_of_index=config['training']['bsd_num_of_index']
 )
 
 # sample before training
@@ -291,7 +294,7 @@ best_fid = np.infty
 while flag:
     epoch_idx += 1
     print('Start epoch %d...' % epoch_idx)
-    
+
     for x_real, y in train_loader:
         it += 1
         
@@ -304,8 +307,7 @@ while flag:
 
         x_real, y = x_real.to(device), y.to(device)
         y.clamp_(None, nlabels-1)
-        
-        
+
         # Discriminator updates
         if config['z_dist']['type'] == 'gmm2gauss':
             cur_lambda=it/max_iter
@@ -324,8 +326,10 @@ while flag:
                 z = zdist.sample((batch_size,), cur_lambda=it/max_iter)
             else:
                 z = zdist.sample((batch_size,))
-            gloss = trainer.generator_trainstep(y, z)
+            gloss, clsloss, bsdloss = trainer.generator_trainstep(y, z)
             logger.add('losses', 'generator', gloss, it=it)
+            logger.add('cls_losses', 'generator', clsloss, it=it)
+            logger.add('bsd_loss', 'generator', bsdloss, it=it)
 
             if config['training']['take_model_average']:
                 update_average(generator_test, generator,
@@ -333,10 +337,11 @@ while flag:
         g_scheduler.step()
         # Print stats
         g_loss_last = logger.get_last('losses', 'generator')
+        bsd_loss_last = logger.get_last('bss_loss', 'generator')
         d_loss_last = logger.get_last('losses', 'discriminator')
         d_reg_last = logger.get_last('losses', 'regularizer')
-        print('[epoch %0d, it %4d] g_loss = %.4f, d_loss = %.4f, reg=%.4f'
-              % (epoch_idx, it, g_loss_last, d_loss_last, d_reg_last))
+        print('[epoch %0d, it %4d] g_loss = %.4f, bsd_loss = %.4f,d_loss = %.4f, reg=%.4f'
+              % (epoch_idx, it, g_loss_last, bsd_loss_last, d_loss_last, d_reg_last))
 
         # (i) Sample if necessary
         if (it % config['training']['sample_every']) == 0:
@@ -374,6 +379,7 @@ while flag:
             if fid < best_fid:
                 checkpoint_io.save('model_best.pt' , it=it)
                 best_fid = fid
+                print('cur')
             print('Current best FID is: ', best_fid)
 
         # (iii) Backup if necessary
@@ -391,6 +397,5 @@ while flag:
 
             if (restart_every > 0 and t0 - tstart > restart_every):
                 exit(3)
-                
     if it > max_iter:
         flag = False

@@ -1,7 +1,7 @@
 import yaml
 from torch import optim
 from os import path
-from gan_training.models import generator_dict, discriminator_dict, im2latent_model_dict
+from gan_training.models import generator_dict, discriminator_dict
 from gan_training.train import toggle_grad
 
 
@@ -89,17 +89,6 @@ def build_generator(config):
     
     return generator
 
-def build_im2latent(config):
-    # Get classes
-    Im2latent = im2latent_model_dict[config['im2latent']['name']]
-    # Build models
-    im2vec = Im2latent(
-        z_dim=config['z_dist']['dim'],
-        size=config['data']['img_size'],
-        **config['im2latent']['kwargs']
-    )
-
-    return im2vec
 
 
 def build_optimizers(generator, discriminator, config):
@@ -166,26 +155,6 @@ def build_optimizers(generator, discriminator, config):
     
 
     return g_optimizer, d_optimizer
-
-
-def build_gmm_layer_optimizers(gmm_layer, config):
-    optimizer = config['training']['optimizer']
-    lr_gmm = config['training']['lr_gmm']
-    toggle_grad(gmm_layer, True)
-    
-    gmm_params = gmm_layer.parameters()
-
-    # Optimizers
-    if optimizer == 'rmsprop':
-        gmm_optimizer = optim.RMSprop(gmm_params, lr=lr_gmm, alpha=0.99, eps=1e-8)
-        
-    elif optimizer == 'adam':
-        gmm_optimizer = optim.Adam(gmm_params, lr=lr_gmm, betas=(0., 0.99), eps=1e-8)
-        
-    elif optimizer == 'sgd':
-        gmm_optimizer = optim.SGD(gmm_params, lr=lr_gmm, momentum=0.)
-        
-    return gmm_optimizer
 
 
 def build_lr_scheduler(optimizer, config, last_epoch=-1):

@@ -19,7 +19,7 @@ def get_zdist(dist_name, dim, mean=None, cov=None, gmm_components_weight=None, g
         cov.to(device)
         zdist = distributions.MultivariateNormal(loc=mean, covariance_matrix=cov)
     elif dist_name == 'gmm':
-        zdist = GMMTorch(gmm_components_weight, gmm_mean, gmm_cov, device)
+        zdist = GMM(gmm_components_weight, gmm_mean, gmm_cov, device)
     elif dist_name == 'kde':
         zdist = KDE(latentvecs, device)
     elif dist_name == 'gmm2gauss':
@@ -55,23 +55,6 @@ def interpolate_sphere(z1, z2, t):
     return z
 
 class GMM:  
-   def __init__(self, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):  
-       self.gmm_components_weight = gmm_components_weight  
-       self.gmm_mean = gmm_mean
-       self.gmm_cov = gmm_cov
-       self.device = device
- 
-   def sample(self, sample_shape):  
-       num_sample = sample_shape[0]
-       num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
-       points = []  
-       for component_index, num in enumerate(num_for_classes):  
-           mean = self.gmm_mean[component_index,:]
-           cov = self.gmm_cov[component_index,:,:]
-           points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
-       return torch.FloatTensor(np.concatenate(points)).to(self.device) 
-
-class GMMTorch:  
     def __init__(self, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):  
         self.gmm_components_weight = gmm_components_weight
         gmm_mean = torch.from_numpy(gmm_mean)
@@ -127,37 +110,3 @@ class KDE:
         num_sample = sample_shape[0]
         samles = self.kde.sample(n_samples=num_sample)
         return torch.FloatTensor(samles).to(self.device) 
-
-class Limited_Data_GMM:
-    '''
-    eps: least distance between samples
-    
-    '''
-    def __init__(self, eps, gmm_components_weight=None, gmm_mean=None, gmm_cov=None, device=None):
-        self.eps = eps
-        self.gmm_components_weight = gmm_components_weight  
-        self.gmm_mean = gmm_mean
-        self.gmm_cov = gmm_cov
-        self.device = device
- 
-    def sample(self, sample_shape):  
-        num_sample = sample_shape[0]
-        num_for_classes = np.random.multinomial(n=num_sample, pvals=self.gmm_components_weight)
-        points = []  
-        for component_index, num in enumerate(num_for_classes):  
-            mean = self.gmm_mean[component_index,:]
-            cov = self.gmm_cov[component_index,:,:]
-            points.append(np.random.multivariate_normal(mean=mean, cov=cov,size=num))  
-        return torch.FloatTensor(np.concatenate(points)).to(self.device) 
-
-
-
-
-if __name__ == '__main__':
-    gmm_components_weight = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_components_weights.npy')
-    gmm_mean = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_mean.npy')
-    gmm_cov = np.load('/home/zhangzr/GAN_stability/output/vec2img/pets_256dim_special_init_fix/gmm_cov.npy')
-    zdist = get_zdist(dist_name='gmm2gauss', dim=256, gmm_components_weight=gmm_components_weight, gmm_mean=gmm_mean, gmm_cov=gmm_cov, device=None)
-    sample = zdist.sample((16,), cur_lambda = 0.8)
-    print('sample shape: ', sample.shape)
-    print(sample.mean())
