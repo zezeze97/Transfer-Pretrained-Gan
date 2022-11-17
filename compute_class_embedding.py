@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('--config', type=str, help='Path to config file.')
 parser.add_argument('--no-cuda', action='store_true', help='Do not use cuda.')
-parser.add_argument('--outdir', type=str, help='Path to save class_embedding.')
+# parser.add_argument('--outdir', type=str, help='Path to save class_embedding.')
 parser.add_argument('--softlabel', action='store_true', help='use logitic.')
 args = parser.parse_args()
 
@@ -42,12 +42,10 @@ is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 
 # Short hands
 batch_size = config['training']['batch_size']
-out_dir = args.outdir
+out_dir = path.join('output',config['training']['class_embedding'].split('/')[1])
 class_embedding_dir = path.join(out_dir, 'class_embedding')
 
 # Create missing directories
-if not path.exists(out_dir):
-    os.makedirs(out_dir)
 if not path.exists(class_embedding_dir):
     os.makedirs(class_embedding_dir)
 
@@ -172,5 +170,5 @@ for k,v in proportitionDict.items():
 simplify_countDict['else'] = len(pred_label) - cumulative_count
 
 plt.bar(list(simplify_countDict.keys()), simplify_countDict.values(), color='b')  
-plt.savefig(path.join(args.outdir, "pred_label_hist.png"))
+plt.savefig(path.join(out_dir, "pred_label_hist.png"))
     
