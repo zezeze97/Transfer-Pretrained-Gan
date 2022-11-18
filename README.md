@@ -27,18 +27,18 @@
       ```
       # First compute class embeding of the target data
       python compute_class_embedding.py --config {Path of vec2img config}
-      # eg: python compute_class_embedding.py --config configs/vec2img/flowers/vec2img_flowers_sub100.yaml, result will be saved in output/flowers_sub100.
+      # eg: python compute_class_embedding.py --config configs/vec2img/flowers/vec2img_flowers_sub1000.yaml, result will be saved in output/flowers_sub1000.
 
       # Then compute latent vectors of target data
       python vec2img.py {Path of vec2img config}
-      # eg: python vec2img.py configs/vec2img/flowers/vec2img_flowers_sub100.yaml, result will be saved in output/vec2img/flowers_sub100
+      # eg: python vec2img.py configs/vec2img/flowers/vec2img_flowers_sub1000.yaml, result will be saved in output/vec2img/flowers_sub1000
       ```
 
 # Latent Space Modeling
  After calculating the hidden vector of the target dataset, it can be modeled using GMM as a priori distribution. The number of GMM components is set to 5 for the full, 1000 and 100-sample dataset experiments and 3 for the 25-sample dataset.
  ```
  python latentvecs_modeling.py --prefix {Root path of latentvecs} --components_num {Number of GMM components}
- # eg: python latentvecs_modeling.py --prefix output/vec2img/flowers_sub100 --components_num 5
+ # eg: python latentvecs_modeling.py --prefix output/vec2img/flowers_sub1000 --components_num 5
  ```
 
 # Finetuning
@@ -47,15 +47,15 @@
     ```
     # trustOPT-
     python train.py {Path of trustOPT- finetuning config}
-    # eg: python train.py configs/finetune/flowers/finetune_flowers_sub100_trustOPT_simple.yaml
+    # eg: python train.py configs/finetune/flowers/finetune_flowers_sub1000_trustOPT_simple.yaml
 
     # trustOPT
     python train.py {Path of trustOPT finetuning config}
-    # eg: python train.py configs/finetune/cathedral/finetune_cathedral_sub1000_trustOPT.yaml
+    # eg: python train.py configs/finetune/flowers/finetune_flowers_sub1000_trustOPT.yaml
 
     # BSD
     python train_bsd.py {Path of BSD finetuning config}
-    # eg: python train_bsd.py configs/finetune/flowers/finetune_flowers_sub100_BSD.yaml
+    # eg: python train_bsd.py configs/finetune/flowers/finetune_flowers_sub25_BSD.yaml
     
     # tensorboard visualization
     tensorborad --logdir {Path of output dir}
